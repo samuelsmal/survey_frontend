@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  padding: 0 100px;
 }
 
 .App-logo {
@@ -29,4 +30,24 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.label {
+
+}
+
+.textarea {
+  min-height: 200px;
+}
+
+.submit_btn {
+  max-width: 100px;
+  margin: 0 auto;
+  margin-top: 10px;
 }

@@ -1,3 +1,9 @@
+# Survey Frontend
+
+Shitty but working frontend for the survey. With timer! And React!
+
+Nico would be proud.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
