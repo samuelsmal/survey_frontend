@@ -1,8 +1,13 @@
 # Survey Frontend
+## EPFL 2018-2019, HUM-403, experimental cognitive psychology
 
 Shitty but working frontend for the survey. With timer! And React!
 
 Nico would be proud.
+
+to be used with: https://github.com/samuelsmal/survey_backend
+
+## Further docs ...
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
