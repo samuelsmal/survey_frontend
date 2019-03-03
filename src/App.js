@@ -9,12 +9,11 @@ import TimerMixin from 'react-timer-mixin';
 // TODO maybe show a countdown?
 // TODO make question change more visible
 
-// TODO add login screen where people enter number -> this number sets 
+// TODO add login screen where people enter number -> this number sets
 var __BASE_URL__ = 'http://127.0.0.1:5000';
 var __QUESTION_DELAY__ = 6000;
-var __USER_ID__ = null;
 
-function sendAnswers(answers) {
+function sendAnswers(user_id, answers) {
   console.log('in send answers ' + answers)
   axios.get(__BASE_URL__ + '/test')
         .then((response) => {
@@ -24,7 +23,7 @@ function sendAnswers(answers) {
           console.log('error in gein gett' + error);
         });
   axios.post(__BASE_URL__ + '/submitAnswers', {
-    user_id: __USER_ID__,
+    user_id: user_id,
     answers: answers
   }).then((response) => {
       console.log(response);
@@ -37,7 +36,9 @@ function sendAnswers(answers) {
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { value: '',
+    this.state = {
+      user_id: null,
+      value: '',
       answers: [],
       questions: ['brick', 'toothbrush', 'gummy beer'],
       current_question_id: 0,
@@ -45,9 +46,15 @@ class App extends Component {
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleSubmitUserid = this.handleSubmitUserid.bind(this);
+    this.renderForm = this.renderForm.bind(this);
+    this.renderUserId = this.renderUserId.bind(this);
+    this.setTimer = this.setTimer.bind(this);
+
+    this.interval = null;
   }
 
-  componentDidMount() {
+  setTimer (){
     this.interval = TimerMixin.setInterval(() => {
       console.log("next question");
       if (this.state.current_question_id < this.state.questions.length - 1) {
@@ -56,8 +63,13 @@ class App extends Component {
     }, __QUESTION_DELAY__);
   }
 
+  componentDidMount() {
+  }
+
   compnentWillUnmount() {
-    TimerMixin.clearInterval(this.interval);
+    if (this.interval !== null) {
+      TimerMixin.clearInterval(this.interval);
+    }
   }
 
   handleChange(event) {
@@ -65,18 +77,29 @@ class App extends Component {
   }
 
   handleSubmit(event) {
-    this.setState({answers: this.state.answers.concat([this.state.current_question_id, 
+    this.setState({answers: this.state.answers.concat([this.state.current_question_id,
       this.state.value, Date.now()]), value: ''},
       () => {
-        sendAnswers(this.state.answers);
-        console.log(this.state.answers);
+        sendAnswers(this.state.user_id, this.state.answers);
       }
     );
 
     event.preventDefault();
   }
 
-  render() {
+  handleSubmitUserid(event) {
+    console.log('232332 her')
+    this.setState({user_id: this.state.value, value: ''},
+      () => {
+        console.log('code saved')
+        this.setTimer()
+      }
+    );
+
+    event.preventDefault();
+  }
+
+  renderForm() {
     return (
       <div className="App">
         <p>Press <b>ENTER</b> after each new word</p>
@@ -85,9 +108,30 @@ class App extends Component {
           <input className="textarea" type="textarea" value={this.state.value} onChange={this.handleChange}/>
           <input className="submit_btn" type="submit" value="Submit"/>
         </form>
-
       </div>
     );
+  }
+
+  renderUserId(){
+    return (
+      <div className="App">
+        <p>Press <b>ENTER</b> to save given code</p>
+        <form onSubmit={this.handleSubmitUserId} className="form">
+          <label className="label">Please enter the given code from your sheet of paper.</label>
+          <input className="textarea" type="textarea" value={this.state.value} onChange={this.handleChange}/>
+          <input className="submit_btn" type="submit" value="Submit"/>
+        </form>
+      </div>
+    );
+  }
+
+  render() {
+    if (this.state.user_id === null) {
+      console.log('???')
+      return this.renderUserId()
+    } else {
+      return this.renderForm()
+    }
   }
 }
 
