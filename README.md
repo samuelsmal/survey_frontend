@@ -1,9 +1,9 @@
 # Survey Frontend
 ## EPFL 2018-2019, HUM-403, experimental cognitive psychology
 
-Shitty but working frontend for the survey. With timer! And React!
+Shitty but working frontend for the survey. With timer! And React! Much cool!
 
-Nico would be proud.
+Nico would be proud. It's super shitty and doesn't follow any react guidelines...
 
 to be used with: https://github.com/samuelsmal/survey_backend
 

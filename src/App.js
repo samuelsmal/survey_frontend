@@ -13,6 +13,12 @@ import TimerMixin from 'react-timer-mixin';
 var __BASE_URL__ = 'http://127.0.0.1:5000';
 var __QUESTION_DELAY__ = 6000;
 
+var __MUSIC__ = {
+  entry: "gtr-nylon22.wav",
+  ct: "",
+  dt: ""
+}
+
 function sendAnswers(user_id, answers) {
   console.log('in send answers ' + answers)
   axios.get(__BASE_URL__ + '/test')
@@ -42,6 +48,8 @@ class App extends Component {
       answers: [],
       questions: ['brick', 'toothbrush', 'gummy beer'],
       current_question_id: 0,
+      music_id: 'entry',
+      music_url: null
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -50,8 +58,17 @@ class App extends Component {
     this.renderForm = this.renderForm.bind(this);
     this.renderUserId = this.renderUserId.bind(this);
     this.setTimer = this.setTimer.bind(this);
+    this.setMusic = this.setMusic.bind(this);
 
     this.interval = null;
+  }
+
+  setMusic(id){
+    if (id in __MUSIC__) {
+      this.setState({music_url: "/songs/" + __MUSIC__[id]})
+    } else {
+      this.setState({music_url: ""})
+    }
   }
 
   setTimer (){
@@ -64,6 +81,8 @@ class App extends Component {
   }
 
   componentDidMount() {
+    // TODO set this!
+    //this.setMusic('entry');
   }
 
   compnentWillUnmount() {
@@ -88,7 +107,6 @@ class App extends Component {
   }
 
   handleSubmitUserid(event) {
-    console.log('232332 her')
     this.setState({user_id: this.state.value, value: ''},
       () => {
         console.log('code saved')
@@ -114,8 +132,13 @@ class App extends Component {
 
   renderUserId(){
     return (
-      <div className="App">
-        <p>Press <b>ENTER</b> to save given code</p>
+      <div className="App welcome">
+      <audio autoPlay="autoplay" loop="True">
+        <source src={process.env.PUBLIC_URL + this.state.music_url} />
+      </audio>
+        <h1>Welcome to our little study!</h1>
+        <p>It will take about 30 min of your time to complete this study.</p>
+        <p>Please make sure that your headphones are plugged in. You should hear a song right now.</p>
         <form onSubmit={this.handleSubmitUserId} className="form">
           <label className="label">Please enter the given code from your sheet of paper.</label>
           <input className="textarea" type="textarea" value={this.state.value} onChange={this.handleChange}/>
