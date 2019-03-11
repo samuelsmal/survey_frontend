@@ -7,18 +7,22 @@ import {convergence_tasks_fr} from './questions';
 // TODO some styling
 // TODO put either questions into their own component or play audio through js
 // TODO handle headphone switch
+// TODO get order of questions from server for given user id
+// TODO get order of questionnaire from server
+// TODO send beginning of survey to server
 
 var __BASE_URL__ = 'http://127.0.0.1:5000';
-var __QUESTION_DELAY__ = 10 // 6000;
-var __MUSIC_PRIME_TIME__ = 10 // 15000; // 15"
-var __LONG_BREAK_TIME__ = 2 * 60 * 1000;
-
+var __TIMING_DURATIONS__ = {
+  'music_priming': 10, //15 * 1000,
+  'questions': 2 * 60 * 1000,
+  'long_break': 30 * 1000,
+  'break_between_questions': 15 * 1000
+};
 var __MUSIC__ = {
   entry: "gtr-nylon22.wav",
   ct: "",
   dt: ""
 };
-
 var __LANGUAGES__ = ['en', 'de', 'fr'];
 var __LANGUAGE_QUESTION_MAP__ = {
   'fr': {
@@ -49,8 +53,8 @@ function sendAnswers(user_id, answers) {
 function getQuestion(language_id, task, question_id) {
   var qs = __LANGUAGE_QUESTION_MAP__[language_id][task];
 
-  for (var q in qs) {
-    if (q['id'] === question_id) {
+  for (const q of qs) {
+    if (q['id'] == question_id) {
       return q;
     }
   }
@@ -63,7 +67,7 @@ class App extends Component {
     this.state = {
       user_id: '',
       answers: [],
-      questions: null,
+      question: null,
       current_question_id: 1,
       music_id: 'entry',
       music_url: null,
@@ -80,7 +84,6 @@ class App extends Component {
     this.renderBreak = this.renderBreak.bind(this);
     this.renderForm = this.renderForm.bind(this);
     this.renderUserId = this.renderUserId.bind(this);
-    this.setQuestionTimer = this.setQuestionTimer.bind(this);
     this.setWaitTimer = this.setWaitTimer.bind(this);
     this.setMusic = this.setMusic.bind(this);
     this.handleLanguageSelection = this.handleLanguageSelection.bind(this);
@@ -114,17 +117,20 @@ class App extends Component {
 
     // TODO there will probably be an issue with the
 
-    this.setState({stage_id: next_stage, questions: null, count_down: -1}, () => {
+    this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
       if (next_stage === 1) {
         this.setMusic(1);
-        this.setWaitTimer('short');
+        this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       } else if (next_stage === 2) {
-        // TODO fix this hardcoded piece
-        this.setState({questions: __LANGUAGE_QUESTION_MAP__[this.state.selectedLanguage]['convergence_tasks']}, () => { console.log(this.state.questions); this.setQuestionTimer()});
+        this.setState({
+          question: getQuestion(this.state.selectedLanguage,
+            'convergence_tasks',
+            this.state.current_question_id)
+        }, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       } else if (next_stage === 3) {
-        this.setWaitTimer('short')
+        this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions'])
       } else if (next_stage === 4) {
-        this.setState({questions: __LANGUAGE_QUESTION_MAP__[this.state.selectedLanguage]['convergence_tasks']});
+        //this.setState({questions: __LANGUAGE_QUESTION_MAP__[this.state.selectedLanguage]['convergence_tasks']});
         this.setQuestionTimer();
       } else if (next_stage === 5) {
         this.setMusic(null);
@@ -151,28 +157,16 @@ class App extends Component {
     }
   }
 
-  setQuestionTimer (){
-    this.setState({count_down: __QUESTION_DELAY__, count_down_start: new Date().getTime()}, () => {
-      this.interval = TimerMixin.setInterval(() => {
-        var seconds_to_go = (__QUESTION_DELAY__ - (new Date().getTime() - this.state.count_down_start)) / 1000;
-        this.setState({count_down: seconds_to_go});
-      });
-
-      this.timeout = TimerMixin.setTimeout(this.progressToNextStage, __QUESTION_DELAY__);
-    });
-  }
-
-  setWaitTimer(wait_timer_type) {
-    var timer_duration = (wait_timer_type === 'short' ? __MUSIC_PRIME_TIME__ : __LONG_BREAK_TIME__);
+  setWaitTimer(timer_duration) {
     this.setState({
-      count_down: timer_duration,
+      count_down_duration: timer_duration,
+      count_down: Math.floor(timer_duration / 1000),
       count_down_start: new Date().getTime()},
       () => {
         this.interval = TimerMixin.setInterval(() => {
-          var seconds_to_go = (timer_duration - (new Date().getTime() - this.state.count_down_start)) / 1000;
-          console.log(seconds_to_go);
+          var seconds_to_go = Math.floor((this.state.count_down_duration - (new Date().getTime() - this.state.count_down_start)) / 1000);
           this.setState({count_down: seconds_to_go});
-        }, timer_duration);
+        }, 100);
 
         this.timeout = TimerMixin.setTimeout(this.progressToNextStage, timer_duration);
     });
@@ -202,11 +196,13 @@ class App extends Component {
   }
 
   handleSubmit(event) {
-    this.setState({answers: this.state.answers.concat([this.state.current_question_id,
-      this.state.value, Date.now()]), value: ''},
-      () => {
-        sendAnswers(this.state.user_id, this.state.answers);
-      }
+    this.setState({
+      answers: this.state.answers.concat([this.state.current_question_id, this.state.value, Date.now()]),
+      value: '',
+      question: getQuestion(this.state.selectedLanguage, 'convergence_tasks', this.state.current_question_id + 1),
+      current_question_id: this.state.current_question_id + 1
+    },
+      () => { sendAnswers(this.state.user_id, this.state.answers); }
     );
 
     event.preventDefault();
@@ -240,9 +236,14 @@ class App extends Component {
   renderForm() {
     return (
       <div className="App">
+        <div className="countDownTimer">
+          { this.state.count_down >= 0 &&
+            <p>{this.state.count_down} seconds to go</p>
+          }
+        </div>
         <p>Press <b>ENTER</b> after each new word</p>
         <form onSubmit={this.handleSubmit} className="form">
-          <label className="label">Come up with as many uses for object <b>{getQuestion(this.state.selectedLanguage, 'convergence_tasks', this.question_id)['question']}</b></label>
+          <label className="label"> {this.state.question.question} </label>
           <input className="textarea" type="textarea" value={this.state.value} onChange={this.handleChange}/>
           <input className="submit_btn" type="submit" value="Submit"/>
         </form>
@@ -280,7 +281,7 @@ class App extends Component {
 
   render() {
     if (this.state.user_data_ok) {
-      if (this.state.questions === null) {
+      if (this.state.question === null) {
         return this.renderBreak()
       } else {
         return this.renderForm()
