@@ -1,64 +1,14 @@
-import axios from 'axios';
 import React, { Component } from 'react';
 import './App.css';
 import TimerMixin from 'react-timer-mixin';
-import {convergence_tasks_fr} from './questions';
+import {RenderBreak, ConvergenceQuestion, Music, RenderDone, DivergentQuestion} from './components';
+import {__TIMING_DURATIONS__, __MUSIC__, __LANGUAGES__} from './constants';
+import {sendAnswers, getQuestions} from './api';
 
 // TODO some styling
 // TODO put either questions into their own component or play audio through js
 // TODO handle headphone switch
-// TODO get order of questions from server for given user id
-// TODO get order of questionnaire from server
 // TODO send beginning of survey to server
-
-var __BASE_URL__ = 'http://127.0.0.1:5000';
-var __TIMING_DURATIONS__ = {
-  'music_priming': 10, //15 * 1000,
-  'questions': 2 * 60 * 1000,
-  'long_break': 30 * 1000,
-  'break_between_questions': 15 * 1000
-};
-var __MUSIC__ = {
-  entry: "gtr-nylon22.wav",
-  ct: "",
-  dt: ""
-};
-var __LANGUAGES__ = ['en', 'de', 'fr'];
-var __LANGUAGE_QUESTION_MAP__ = {
-  'fr': {
-    'convergence_tasks': convergence_tasks_fr,
-    'divergence_tasks': []
-  }
-};
-
-function sendAnswers(user_id, answers) {
-  console.log('in send answers ' + answers)
-  axios.get(__BASE_URL__ + '/test')
-        .then((response) => {
-          console.log('resp from test' + response);
-        })
-        .catch((error) => {
-          console.log('error in gein gett' + error);
-        });
-  axios.post(__BASE_URL__ + '/submitAnswers', {
-    user_id: user_id,
-    answers: answers
-  }).then((response) => {
-      console.log(response);
-  }).catch((error) => {
-      console.log(error);
-  });
-}
-
-function getQuestion(language_id, task, question_id) {
-  var qs = __LANGUAGE_QUESTION_MAP__[language_id][task];
-
-  for (const q of qs) {
-    if (q['id'] == question_id) {
-      return q;
-    }
-  }
-}
 
 
 class App extends Component {
@@ -75,23 +25,50 @@ class App extends Component {
       selectedLanguage: "",
       stage_id: 0,
       count_down_start: null,
-      count_down: null
+      count_down: null,
+      questions: null,
+      task_ptr: 0,
+      question_ptr: 0
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmitUserData = this.handleSubmitUserData.bind(this);
-    this.renderBreak = this.renderBreak.bind(this);
-    this.renderForm = this.renderForm.bind(this);
+    this.renderQuestion = this.renderQuestion.bind(this);
     this.renderUserId = this.renderUserId.bind(this);
     this.setWaitTimer = this.setWaitTimer.bind(this);
     this.setMusic = this.setMusic.bind(this);
     this.handleLanguageSelection = this.handleLanguageSelection.bind(this);
     this.progressToNextStage = this.progressToNextStage.bind(this);
     this.clearTimers = this.clearTimers.bind(this);
+    this.getNextQuestion = this.getNextQuestion.bind(this);
+    this.progressPtrs = this.progressPtrs.bind(this);
 
     this.timeout = null;
     this.count_down = null;
+  }
+
+  progressPtrs() {
+    if (this.state.questions[this.state.task_ptr].length > this.state.question_ptr + 1) {
+      this.setState({question_ptr: this.state.question_ptr + 1}, () => {
+        this.setState({question: this.getNextQuestion()});
+      });
+    } else if (this.state.questions.length > this.state.task_ptr + 1) {
+      this.setState({question_ptr: 0, task_ptr: this.state.task_ptr + 1, question: null},
+        this.progressToNextStage);
+    } else {
+        this.setState({question_ptr: -1, task_ptr: -1, question: null, done: true},
+          this.progressToNextStage);
+    }
+  }
+
+  getNextQuestion() {
+    if (this.state.questions.length > this.state.task_ptr && this.state.questions[this.state.task_ptr].length > this.state.question_ptr) {
+      console.log(this.state.questions[this.state.task_ptr][this.state.question_ptr]);
+      return this.state.questions[this.state.task_ptr][this.state.question_ptr];
+    } else {
+      return null;
+    }
   }
 
   progressToNextStage(){
@@ -113,39 +90,34 @@ class App extends Component {
 
     this.clearTimers();
 
-    console.log("progrssing to next stage " + next_stage);
-
-    // TODO there will probably be an issue with the
+    console.log("progressing to next stage " + next_stage);
 
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
       if (next_stage === 1) {
+        // first priming
         this.setMusic(1);
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       } else if (next_stage === 2) {
-        this.setState({
-          question: getQuestion(this.state.selectedLanguage,
-            'convergence_tasks',
-            this.state.current_question_id)
-        }, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        // first round of questions
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       } else if (next_stage === 3) {
+        // short break
         this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions'])
       } else if (next_stage === 4) {
-        //this.setState({questions: __LANGUAGE_QUESTION_MAP__[this.state.selectedLanguage]['convergence_tasks']});
-        this.setQuestionTimer();
+        // second q-round
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       } else if (next_stage === 5) {
+        // silent break
         this.setMusic(null);
-        this.setWaitTimer('long');
+        this.setWaitTimer(__TIMING_DURATIONS__['silence']);
       } else if (next_stage === 6) {
+        // second priming
         this.setMusic(2);
-        this.setWaitTimer('short');
-      } else if (next_stage === 7) {
-        this.setState({questions: __LANGUAGE_QUESTION_MAP__[this.state.selectedLanguage]['convergence_tasks']});
-        this.setQuestionTimer();
-      } else if (next_stage === 8) {
-        this.setWaitTimer('short');
+        this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
+      } else {
+        // done with everything
+        this.setState({done: true});
       }
-
-      // TODO finish this
     });
   }
 
@@ -196,14 +168,18 @@ class App extends Component {
   }
 
   handleSubmit(event) {
-    this.setState({
-      answers: this.state.answers.concat([this.state.current_question_id, this.state.value, Date.now()]),
-      value: '',
-      question: getQuestion(this.state.selectedLanguage, 'convergence_tasks', this.state.current_question_id + 1),
-      current_question_id: this.state.current_question_id + 1
-    },
-      () => { sendAnswers(this.state.user_id, this.state.answers); }
-    );
+    if (event.target.value) {
+      this.setState({
+        answers: this.state.answers.concat([[this.state.question.id, event.target.value, new Date().toLocaleString()]]),
+        value: ''
+      },
+        () => {
+          this.progressPtrs();
+          document.getElementById("question-form").reset();
+          sendAnswers(this.state.user_id, this.state.answers);
+        }
+      );
+    }
 
     event.preventDefault();
   }
@@ -212,7 +188,11 @@ class App extends Component {
     if (this.state.user_id !== null
       && this.state.user_id !== ''
       && __LANGUAGES__.includes(this.state.selectedLanguage)) {
-      this.setState({user_data_ok: true}, this.progressToNextStage);
+      getQuestions(this.state.user_id, this.state.selectedLanguage).then(response => {
+        console.log(response);
+        this.setState({user_data_ok: true, questions: response.data},
+          this.progressToNextStage);
+      }).catch(error => console.log(error));
     }
 
     event.preventDefault();
@@ -222,18 +202,16 @@ class App extends Component {
     this.setState({selectedLanguage: event.target.value});
   }
 
-  renderBreak() {
-    return (
-      <div className="App">
-        <p>break</p>
-        { this.state.count_down >= 0 &&
-          <p>{this.state.count_down} seconds to go</p>
-        }
-      </div>
-    )
-  }
+  renderQuestion() {
+    let q;
+    if (this.state.question && this.state.question.id.startsWith('ct')) {
+      q = <ConvergenceQuestion question={this.state.question.question}
+        possibleAnswers={this.state.question.possible_answers}
+        onChange={this.handleSubmit} />;
+    } else {
+      q = <DivergentQuestion />;
+    }
 
-  renderForm() {
     return (
       <div className="App">
         <div className="countDownTimer">
@@ -241,11 +219,8 @@ class App extends Component {
             <p>{this.state.count_down} seconds to go</p>
           }
         </div>
-        <p>Press <b>ENTER</b> after each new word</p>
-        <form onSubmit={this.handleSubmit} className="form">
-          <label className="label"> {this.state.question.question} </label>
-          <input className="textarea" type="textarea" value={this.state.value} onChange={this.handleChange}/>
-          <input className="submit_btn" type="submit" value="Submit"/>
+        <form onSubmit={this.handleSubmit} className="form" id="question-form">
+          {q}
         </form>
       </div>
     );
@@ -254,9 +229,7 @@ class App extends Component {
   renderUserId(){
     return (
       <div className="App welcome">
-        <audio autoPlay="autoplay" loop="True">
-          <source src={process.env.PUBLIC_URL + this.state.music_url} />
-        </audio>
+        <Music music_url={this.state.music_url} />
         <h1>Welcome to our little study!</h1>
         <p>It will take about 30 min of your time to complete this study.</p>
         <p>Please make sure that your headphones are plugged in. You should hear a song right now.</p>
@@ -265,7 +238,7 @@ class App extends Component {
         <p>Good luck!</p>
         <form onSubmit={this.handleSubmitUserData} className="form">
           <label className="label">Please enter the given code from your sheet of paper.</label>
-          <input className="textarea" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>
+          <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>
           <label className="label">Select your preferred language.</label>
           <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
             <option value="">select one</option>
@@ -280,14 +253,18 @@ class App extends Component {
   }
 
   render() {
-    if (this.state.user_data_ok) {
-      if (this.state.question === null) {
-        return this.renderBreak()
+    if (!this.state.done) {
+      if (this.state.user_data_ok) {
+        if (this.state.question === null) {
+          return <RenderBreak count_down={this.state.count_down}/>;
+        } else {
+          return this.renderQuestion();
+        }
       } else {
-        return this.renderForm()
+        return this.renderUserId();
       }
     } else {
-      return this.renderUserId()
+      return <RenderDone />;
     }
   }
 }
