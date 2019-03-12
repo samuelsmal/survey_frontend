@@ -38,3 +38,8 @@
 .questionStatement {
   font-weight: bold;
 }
+
+.error_field {
+  color: red;
+  font-weight: bold;
+}

@@ -8,7 +8,7 @@ export const __TIMING_DURATIONS__ = {
 };
 export const __MUSIC__ = {
   entry: "gtr-nylon22.wav",
-  ct: "",
-  dt: ""
+  ct: "Prelude-to-the-afternoon-of-a-faun.mp3",
+  dt: "gtr-nylon22.wav"
 };
 export const __LANGUAGES__ = ['en', 'de', 'fr'];

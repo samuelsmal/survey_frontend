@@ -29,6 +29,7 @@ export function DivergentQuestion(props) {
 export function RenderBreak(props) {
     return (
       <div className="App">
+        <Music music_url={props.music_url} />
         <p>Relax and take a break for {props.count_down} seconds until the next exercise</p>
       </div>
     );

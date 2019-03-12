@@ -3,12 +3,15 @@ import './App.css';
 import TimerMixin from 'react-timer-mixin';
 import {RenderBreak, ConvergenceQuestion, Music, RenderDone, DivergentQuestion} from './components';
 import {__TIMING_DURATIONS__, __MUSIC__, __LANGUAGES__} from './constants';
-import {sendAnswers, getQuestions} from './api';
+import {sendAnswers, getQuestions, sendAdditionalData} from './api';
 
 // TODO some styling
-// TODO put either questions into their own component or play audio through js
 // TODO handle headphone switch
 // TODO send beginning of survey to server
+
+function value_ok(val){
+  return typeof(val) !== 'undefined'
+}
 
 
 class App extends Component {
@@ -28,12 +31,27 @@ class App extends Component {
       count_down: null,
       questions: null,
       task_ptr: 0,
-      question_ptr: 0
+      question_ptr: 0,
+      error_with_user_data: false,
+      additional_user_data: {
+        gender: undefined,
+        age: undefined,
+        relaxed: undefined,
+        tired: undefined,
+        happy: undefined,
+        energetic: undefined,
+        sad: undefined,
+        field_of_study: undefined,
+        country_of_origin: undefined,
+        mother_tongue: undefined,
+        email: undefined
+      }
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmitUserData = this.handleSubmitUserData.bind(this);
+    this.handleAdditionalUserData = this.handleAdditionalUserData.bind(this);
     this.renderQuestion = this.renderQuestion.bind(this);
     this.renderUserId = this.renderUserId.bind(this);
     this.setWaitTimer = this.setWaitTimer.bind(this);
@@ -95,7 +113,7 @@ class App extends Component {
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
       if (next_stage === 1) {
         // first priming
-        this.setMusic(1);
+        this.setMusic('ct');
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       } else if (next_stage === 2) {
         // first round of questions
@@ -145,8 +163,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    // TODO set this!
-    //this.setMusic('entry');
+    this.setMusic('entry');
   }
 
   clearTimers() {
@@ -184,16 +201,29 @@ class App extends Component {
     event.preventDefault();
   }
 
+  handleAdditionalUserData(event) {
+    let t = event.target;
+    this.setState({additional_user_data: {...this.state.additional_user_data,
+      [t.name]: t.value}});
+  }
+
   handleSubmitUserData(event) {
-    if (this.state.user_id !== null
-      && this.state.user_id !== ''
-      && __LANGUAGES__.includes(this.state.selectedLanguage)) {
-      getQuestions(this.state.user_id, this.state.selectedLanguage).then(response => {
-        console.log(response);
-        this.setState({user_data_ok: true, questions: response.data},
-          this.progressToNextStage);
-      }).catch(error => console.log(error));
-    }
+    let t = Object.keys(this.state.additional_user_data)
+    let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
+
+    this.setState({error_with_user_data: !all_good}, () => {
+      if (this.state.user_id !== null
+        && this.state.user_id !== ''
+        && __LANGUAGES__.includes(this.state.selectedLanguage)
+        && all_good) {
+        sendAdditionalData({...this.state.additional_user_data, user_id: this.state.user_id});
+        getQuestions(this.state.user_id, this.state.selectedLanguage).then(response => {
+          console.log(response);
+          this.setState({user_data_ok: true, questions: response.data},
+            this.progressToNextStage);
+        }).catch(error => console.log(error));
+      }
+    })
 
     event.preventDefault();
   }
@@ -214,6 +244,7 @@ class App extends Component {
 
     return (
       <div className="App">
+        <Music music_url={this.state.music_url} />
         <div className="countDownTimer">
           { this.state.count_down >= 0 &&
             <p>{this.state.count_down} seconds to go</p>
@@ -237,6 +268,9 @@ class App extends Component {
         <p>TODO DESCRIBE OUTLINE OF PROCEDURE</p>
         <p>Good luck!</p>
         <form onSubmit={this.handleSubmitUserData} className="form">
+          { this.state.error_with_user_data &&
+              <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
+          }
           <label className="label">Please enter the given code from your sheet of paper.</label>
           <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>
           <label className="label">Select your preferred language.</label>
@@ -246,6 +280,69 @@ class App extends Component {
             <option value="de">Deutsch</option>
             <option value="fr">Francais</option>
           </select>
+          <label className="label">Enter your gender:</label>
+          <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="m">male</option>
+            <option value="f">female</option>
+            <option value="o">other</option>
+          </select>
+          <label className="label">Age</label>
+          <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
+          <label className="label">How are you feeling right now? The scale goes from 1 to 5, with 5 feeling very much so and 1 feeling very not so.</label>
+          <label className="label">Relaxed</label>
+          <select value={this.state.additional_user_data.relaxed} name="relaxed" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <label className="label">Tired</label>
+          <select value={this.state.additional_user_data.relaxed} name="tired" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <label className="label">Happy</label>
+          <select value={this.state.additional_user_data.happy} name="happy" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <label className="label">Energetic</label>
+          <select value={this.state.additional_user_data.energetic} name="energetic" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <label className="label">Sad</label>
+          <select value={this.state.additional_user_data.sad} name="sad" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <label className="label">Field of study / Profession</label>
+          <input type="text" name="field_of_study" value={this.state.additional_user_data.field_of_study} onChange={this.handleAdditionalUserData}/ >
+          <label className="label">Country of origin</label>
+          <input type="text" name="country_of_origin" value={this.state.additional_user_data.country_of_origin} onChange={this.handleAdditionalUserData}/ >
+          <label className="label">Mother tongue</label>
+          <input type="text" name="monther_tongue" value={this.state.additional_user_data.monther_tongue} onChange={this.handleAdditionalUserData}/ >
+          <label className="label">If you would like some feedback, please also enter your email</label>
+          <input type="text" name="email" value={this.state.additional_user_data.email} onChange={this.handleAdditionalUserData}/ >
           <input className="submit_btn" type="submit" value="Submit"/>
         </form>
       </div>
@@ -256,7 +353,7 @@ class App extends Component {
     if (!this.state.done) {
       if (this.state.user_data_ok) {
         if (this.state.question === null) {
-          return <RenderBreak count_down={this.state.count_down}/>;
+          return <RenderBreak count_down={this.state.count_down} music_url={this.state.music_url}/>;
         } else {
           return this.renderQuestion();
         }
