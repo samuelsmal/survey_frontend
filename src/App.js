@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import TimerMixin from 'react-timer-mixin';
-import {RenderBreak, ConvergenceQuestion, Music, RenderDone, DivergentQuestion} from './components';
+import {MoodQuestionaire, RenderBreak, ConvergenceQuestion, Music, RenderDone, DivergentQuestion} from './components';
 import {__TIMING_DURATIONS__, __MUSIC__, __LANGUAGES__} from './constants';
 import {sendAnswers, getQuestions, sendAdditionalData} from './api';
 
@@ -26,7 +26,7 @@ class App extends Component {
       music_url: null,
       user_data_ok: false,
       selectedLanguage: "",
-      stage_id: 0,
+      stage_id: -1,
       count_down_start: null,
       count_down: null,
       questions: null,
@@ -36,24 +36,23 @@ class App extends Component {
       additional_user_data: {
         gender: undefined,
         age: undefined,
-        relaxed: undefined,
-        tired: undefined,
-        happy: undefined,
-        energetic: undefined,
-        sad: undefined,
         field_of_study: undefined,
         country_of_origin: undefined,
         mother_tongue: undefined,
         email: undefined
-      }
+      },
+      displayMoodQuestion: false,
+      mood_values: [],
+      current_mood_values: null
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmitUserData = this.handleSubmitUserData.bind(this);
     this.handleAdditionalUserData = this.handleAdditionalUserData.bind(this);
+    this.handleMoodQuestionaire = this.handleMoodQuestionaire.bind(this);
     this.renderQuestion = this.renderQuestion.bind(this);
-    this.renderUserId = this.renderUserId.bind(this);
+    this.renderWelcomePage = this.renderWelcomePage.bind(this);
     this.setWaitTimer = this.setWaitTimer.bind(this);
     this.setMusic = this.setMusic.bind(this);
     this.handleLanguageSelection = this.handleLanguageSelection.bind(this);
@@ -81,8 +80,10 @@ class App extends Component {
   }
 
   getNextQuestion() {
+    // getNextQuestion works only with nice values
     if (this.state.questions.length > this.state.task_ptr && this.state.questions[this.state.task_ptr].length > this.state.question_ptr) {
-      console.log(this.state.questions[this.state.task_ptr][this.state.question_ptr]);
+      console.debug("found a question in task_ptr: " + this.state.task_ptr + " and q_ptr " + this.state.question_ptr + ", here look:");
+      console.debug(this.state.questions[this.state.task_ptr][this.state.question_ptr]);
       return this.state.questions[this.state.task_ptr][this.state.question_ptr];
     } else {
       return null;
@@ -108,30 +109,48 @@ class App extends Component {
 
     this.clearTimers();
 
-    console.log("progressing to next stage " + next_stage);
+    console.log("progressing to next stage " + next_stage + " prev stage " + current_stage);
 
-    this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
-      if (next_stage === 1) {
+    const stages = [
+      ()=> {
+        this.setState({displayMoodQuestion: true});
+      },
+      ()=> {
         // first priming
         this.setMusic('ct');
+
+        console.log('asddsd h2');
+
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
-      } else if (next_stage === 2) {
+      },
+      ()=>{
+        console.log('asddsd h3');
         // first round of questions
         this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
-      } else if (next_stage === 3) {
+      },
+      ()=>{
         // short break
         this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions'])
-      } else if (next_stage === 4) {
+      },
+      ()=>{
         // second q-round
         this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
-      } else if (next_stage === 5) {
+      },
+      ()=>{
         // silent break
         this.setMusic(null);
         this.setWaitTimer(__TIMING_DURATIONS__['silence']);
-      } else if (next_stage === 6) {
+      },
+      ()=>{
         // second priming
         this.setMusic(2);
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
+      }
+    ];
+
+    this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
+      if (next_stage <= stages.length) {
+        stages[next_stage]();
       } else {
         // done with everything
         this.setState({done: true});
@@ -184,6 +203,14 @@ class App extends Component {
     this.setState({user_id: event.target.value});
   }
 
+  handleMoodQuestionaire(values) {
+    this.setState({
+      mood_values: this.state.mood_values.concat([{timestamp: new Date().toLocaleString(), values: values}]),
+      displayMoodQuestion: false
+    }, ()=>{ this.progressToNextStage() });
+
+  }
+
   handleSubmit(event) {
     if (event.target.value) {
       this.setState({
@@ -211,6 +238,11 @@ class App extends Component {
     let t = Object.keys(this.state.additional_user_data)
     let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
 
+    console.warn('turn this off!')
+    // TODO turn this off!
+    all_good = true
+    this.setState({user_id: "test", selectedLanguage: "fr"});
+
     this.setState({error_with_user_data: !all_good}, () => {
       if (this.state.user_id !== null
         && this.state.user_id !== ''
@@ -230,6 +262,17 @@ class App extends Component {
 
   handleLanguageSelection(event) {
     this.setState({selectedLanguage: event.target.value});
+  }
+
+  handleBack(event) {
+    if (this.state.question_ptr > 1) {
+      this.setState({question_ptr: this.state.question_ptr - 1}, () => {
+        // getNextQuestion works only with nice values, but we check so...
+        this.setState({question: this.getNextQuestion()});
+      });
+    } 
+
+    event.preventDefault();
   }
 
   renderQuestion() {
@@ -253,11 +296,37 @@ class App extends Component {
         <form onSubmit={this.handleSubmit} className="form" id="question-form">
           {q}
         </form>
+        { this.state.question_ptr > 1 &&
+            <button onClick={this.handleBack}/>
+        }
       </div>
     );
   }
 
-  renderUserId(){
+  renderUserInformationForm() {
+    return [
+          <label className="label">Please enter the given code from your sheet of paper.</label>,
+          <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>,
+          <label className="label">Select your preferred language.</label>,
+          <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
+            <option value="">select one</option>
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Francais</option>
+          </select>,
+          <label className="label">Enter your gender:</label>,
+          <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="m">male</option>
+            <option value="f">female</option>
+            <option value="o">other</option>
+          </select>,
+          <label className="label">Age</label>,
+          <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
+    ];
+  }
+
+  renderWelcomePage(){
     return (
       <div className="App welcome">
         <Music music_url={this.state.music_url} />
@@ -271,70 +340,7 @@ class App extends Component {
           { this.state.error_with_user_data &&
               <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
           }
-          <label className="label">Please enter the given code from your sheet of paper.</label>
-          <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>
-          <label className="label">Select your preferred language.</label>
-          <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
-            <option value="">select one</option>
-            <option value="en">English</option>
-            <option value="de">Deutsch</option>
-            <option value="fr">Francais</option>
-          </select>
-          <label className="label">Enter your gender:</label>
-          <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="m">male</option>
-            <option value="f">female</option>
-            <option value="o">other</option>
-          </select>
-          <label className="label">Age</label>
-          <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
-          <label className="label">How are you feeling right now? The scale goes from 1 to 5, with 5 feeling very much so and 1 feeling very not so.</label>
-          <label className="label">Relaxed</label>
-          <select value={this.state.additional_user_data.relaxed} name="relaxed" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          <label className="label">Tired</label>
-          <select value={this.state.additional_user_data.relaxed} name="tired" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          <label className="label">Happy</label>
-          <select value={this.state.additional_user_data.happy} name="happy" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          <label className="label">Energetic</label>
-          <select value={this.state.additional_user_data.energetic} name="energetic" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          <label className="label">Sad</label>
-          <select value={this.state.additional_user_data.sad} name="sad" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
+          { this.renderUserInformationForm() }
           <label className="label">Field of study / Profession</label>
           <input type="text" name="field_of_study" value={this.state.additional_user_data.field_of_study} onChange={this.handleAdditionalUserData}/ >
           <label className="label">Country of origin</label>
@@ -352,13 +358,15 @@ class App extends Component {
   render() {
     if (!this.state.done) {
       if (this.state.user_data_ok) {
-        if (this.state.question === null) {
+        if (this.state.displayMoodQuestion) {
+          return <MoodQuestionaire onSubmit={this.handleMoodQuestionaire}/>;
+        } else if (this.state.question === null) {
           return <RenderBreak count_down={this.state.count_down} music_url={this.state.music_url}/>;
         } else {
           return this.renderQuestion();
         }
       } else {
-        return this.renderUserId();
+        return this.renderWelcomePage();
       }
     } else {
       return <RenderDone />;

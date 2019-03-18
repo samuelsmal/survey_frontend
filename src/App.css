@@ -43,3 +43,7 @@
   color: red;
   font-weight: bold;
 }
+
+.label .user_data {
+  text-transform:capitalize;
+}

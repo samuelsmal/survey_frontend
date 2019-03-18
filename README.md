@@ -7,6 +7,18 @@ Nico would be proud. It's super shitty and doesn't follow any react guidelines..
 
 to be used with: https://github.com/samuelsmal/survey_backend
 
+## questions
+
+1. exhausted
+2. tired
+3. relaxed
+4. arousing
+5. happy
+6. sad
+7. energetic
+
+slider, neutral in the middle
+
 ## Further docs ...
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

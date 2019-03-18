@@ -5,7 +5,9 @@
   "dependencies": {
     "axios": "^0.18.0",
     "react": "^16.6.3",
+    "react-compound-slider": "^1.2.1",
     "react-dom": "^16.6.3",
+    "react-rangeslider": "^2.2.0",
     "react-scripts": "2.1.1",
     "react-timer-mixin": "^0.13.4"
   },
