@@ -19,6 +19,8 @@ export function getQuestions(user_id, language) {
 }
 
 export function sendAdditionalData(data) {
+  console.debug("sending additional data")
+  console.debug(data)
   axios.post(__BASE_URL__ + '/submitUserData', data).then((response) => {
       console.debug(response);
   }).catch((error) => {

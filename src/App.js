@@ -112,33 +112,34 @@ class App extends Component {
 
     console.log("progressing to next stage " + next_stage + " prev stage " + current_stage);
 
+    // the first stage is not listed here
     const stages = [
-      ()=> {
+      (stage_id)=> {
         this.setState({displayMoodQuestion: true});
       },
-      ()=> {
+      (stage_id)=> {
         // first priming
-        this.setMusic('ct');
+        this.setMusic(this.state.questions[this.state.task_ptr][0]['id'].substring(0, 2));
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
-      ()=>{
+      (stage_id)=>{
         // first round of questions
         this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       },
-      ()=>{
+      (stage_id)=>{
         // short break
         this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
       },
-      ()=>{
+      (stage_id)=>{
         // second q-round
         this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       },
-      ()=>{
+      (stage_id)=>{
         // silent break
         this.setMusic(null);
         this.setWaitTimer(__TIMING_DURATIONS__['silence']);
       },
-      ()=>{
+      (stage_id)=>{
         // second priming
         this.setMusic(2);
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
@@ -147,9 +148,10 @@ class App extends Component {
 
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
       if (next_stage < stages.length) {
-        stages[next_stage]();
+        stages[next_stage](this.state.stage_id);
       } else {
         // done with everything
+        console.log("done")
         this.setState({done: true});
       }
     });
@@ -204,8 +206,10 @@ class App extends Component {
     this.setState({
       mood_values: this.state.mood_values.concat([{timestamp: new Date().toLocaleString(), values: values}]),
       displayMoodQuestion: false
-    }, ()=>{ this.progressToNextStage() });
-
+    }, ()=>{
+      sendAdditionalData({user_id: this.state.user_id, data: this.state.mood_values});
+      this.progressToNextStage();
+    })
   }
 
   handleConvergentAnswerSubmission(answer) {
@@ -284,9 +288,7 @@ class App extends Component {
             <p>{this.state.count_down} seconds to go</p>
           }
         </div>
-        <form onSubmit={this.handleSubmit} className="form" id="question-form">
-          {q}
-        </form>
+        <div>{q}</div>
       </div>
     );
   }
@@ -324,7 +326,7 @@ class App extends Component {
         <p>The study will start as soon as you press submit. So make sure that you are ready.</p>
         <p>TODO DESCRIBE OUTLINE OF PROCEDURE</p>
         <p>Good luck!</p>
-        <form onSubmit={this.handleSubmitUserData} className="form">
+        <form className="form">
           { this.state.error_with_user_data &&
               <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
           }
@@ -337,7 +339,8 @@ class App extends Component {
           <input type="text" name="monther_tongue" value={this.state.additional_user_data.monther_tongue} onChange={this.handleAdditionalUserData}/ >
           <label className="label">If you would like some feedback, please also enter your email</label>
           <input type="text" name="email" value={this.state.additional_user_data.email} onChange={this.handleAdditionalUserData}/ >
-          <input className="submit_btn" type="submit" value="Submit"/>
+          <input className="submit_btn" type="submit" value="Submit"
+              onClick={this.handleSubmitUserData} />
         </form>
       </div>
     );

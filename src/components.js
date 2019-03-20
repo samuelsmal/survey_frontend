@@ -86,7 +86,7 @@ export class MoodQuestionaire extends Component {
   };
 
   onSubmit(event) {
-    this._onSubmit();
+    this._onSubmit(this.state.mood_values);
 
     event.preventDefault();
   }
