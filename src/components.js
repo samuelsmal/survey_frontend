@@ -7,11 +7,17 @@ const sliderStyle = {
   width: '100%',
 }
 
+const moodSliderLabelStyle =  {
+  display: 'block',
+  padding: '15px',
+  textAlign: 'center',
+}
+
 const domain = [0, 100]
 
 function SetMoodValue(props) {
   return [
-    <label className="label user_data">{props.name}</label>,
+    <label style={moodSliderLabelStyle}>{props.name}</label>,
     <Slider
           mode={1}
           step={0.001}
@@ -95,8 +101,8 @@ export class MoodQuestionaire extends Component {
   render() {
     const moodValues = this.state.mood_values.map((d, i) =>
       <SetMoodValue value={d.mood_value}
-        name={i} onChange={this.onValueChange}
-        key={"mood_value_" + i}/>);
+        name={d.mood_name} onChange={this.onValueChange}
+        key={"mood_" + d.mood_name}/>);
 
     return (
       <div>
@@ -119,13 +125,13 @@ export function ConvergenceQuestion(props) {
       <label className="questionStatement"> {props.question} </label>
       { props.possibleAnswers.map(answer => {
         return (
-          <div key={props.question.id + "_" + answer.id} >
+          <div key={props.question.id + "_" + answer.id} onClick={() => props.onChange(answer)} >
             <input
               type="radio"
               value={answer.id}
               name={props.question.id}
               key={"input_" + props.question.id + "_" + answer.id}
-              onClick={props.onChange}/>
+              />
             <span className="answer">{answer.answer}</span>
           </div>
         )})}
@@ -133,9 +139,43 @@ export function ConvergenceQuestion(props) {
   );
 }
 
-export function DivergentQuestion(props) {
-  return <h1>lbub</h1>;
+export class DivergentQuestion extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      value: '',
+      keyword: props.keyword
+    };
+
+    this.onSubmit = props.onSubmit;
+  }
+
+  _handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      if (this.state.value.length > 0) {
+        this.onSubmit(this.state.value)
+        this.setState({value: ''})
+        e.preventDefault()
+      }
+    }
+  }
+
+  handleChange = (e) => {
+    this.setState({value: e.target.value});
+  }
+
+  render() {
+    return (
+      <div>
+        <p>Write down as many uses as you can think of for the following object: {this.state.keyword}</p>
+        <p className="instruction">Press enter if you want to submit a response (do it after each word)</p>
+        <input type="text" onKeyPress={this._handleKeyPress} value={this.state.value} onChange={this.handleChange}/>
+      </div>
+    )
+  }
 }
+
 
 export function RenderBreak(props) {
     return (

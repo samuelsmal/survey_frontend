@@ -47,7 +47,8 @@ class App extends Component {
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleConvergentAnswerSubmission = this.handleConvergentAnswerSubmission.bind(this);
+    this.handleDivergentAnswerSubmission = this.handleDivergentAnswerSubmission.bind(this);
     this.handleSubmitUserData = this.handleSubmitUserData.bind(this);
     this.handleAdditionalUserData = this.handleAdditionalUserData.bind(this);
     this.handleMoodQuestionaire = this.handleMoodQuestionaire.bind(this);
@@ -118,19 +119,15 @@ class App extends Component {
       ()=> {
         // first priming
         this.setMusic('ct');
-
-        console.log('asddsd h2');
-
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
       ()=>{
-        console.log('asddsd h3');
         // first round of questions
         this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       },
       ()=>{
         // short break
-        this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions'])
+        this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
       },
       ()=>{
         // second q-round
@@ -149,7 +146,7 @@ class App extends Component {
     ];
 
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
-      if (next_stage <= stages.length) {
+      if (next_stage < stages.length) {
         stages[next_stage]();
       } else {
         // done with everything
@@ -211,21 +208,23 @@ class App extends Component {
 
   }
 
-  handleSubmit(event) {
-    if (event.target.value) {
-      this.setState({
-        answers: this.state.answers.concat([[this.state.question.id, event.target.value, new Date().toLocaleString()]]),
-        value: ''
-      },
-        () => {
-          this.progressPtrs();
-          document.getElementById("question-form").reset();
-          sendAnswers(this.state.user_id, this.state.answers);
-        }
-      );
-    }
+  handleConvergentAnswerSubmission(answer) {
+    this.setState({
+      answers: this.state.answers.concat([[this.state.question.id, answer.id, new Date().toLocaleString()]]),
+      value: ''
+    },
+      () => {
+        this.progressPtrs();
+        document.getElementById("question-form").reset();
+        sendAnswers(this.state.user_id, this.state.answers);
+      }
+    );
+  }
 
-    event.preventDefault();
+  handleDivergentAnswerSubmission(answer) {
+    this.setState({
+      answers: this.state.answers.concat([[this.state.question.id, answer, new Date().toLocaleString()]]),
+    }, () => {sendAnswers(this.state.user_id, this.state.answers)});
   }
 
   handleAdditionalUserData(event) {
@@ -264,25 +263,17 @@ class App extends Component {
     this.setState({selectedLanguage: event.target.value});
   }
 
-  handleBack(event) {
-    if (this.state.question_ptr > 1) {
-      this.setState({question_ptr: this.state.question_ptr - 1}, () => {
-        // getNextQuestion works only with nice values, but we check so...
-        this.setState({question: this.getNextQuestion()});
-      });
-    } 
-
-    event.preventDefault();
-  }
-
   renderQuestion() {
     let q;
     if (this.state.question && this.state.question.id.startsWith('ct')) {
       q = <ConvergenceQuestion question={this.state.question.question}
         possibleAnswers={this.state.question.possible_answers}
-        onChange={this.handleSubmit} />;
+        onChange={this.handleConvergentAnswerSubmission}
+        />;
     } else {
-      q = <DivergentQuestion />;
+      q = <DivergentQuestion keyword={this.state.question.keyword}
+        onSubmit={this.handleDivergentAnswerSubmission}
+        />;
     }
 
     return (
@@ -296,9 +287,6 @@ class App extends Component {
         <form onSubmit={this.handleSubmit} className="form" id="question-form">
           {q}
         </form>
-        { this.state.question_ptr > 1 &&
-            <button onClick={this.handleBack}/>
-        }
       </div>
     );
   }
