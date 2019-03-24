@@ -16,8 +16,9 @@ const moodSliderLabelStyle =  {
 const domain = [0, 100]
 
 function SetMoodValue(props) {
-  return [
-    <label style={moodSliderLabelStyle}>{props.name}</label>,
+  return (
+    <React.Fragment>
+    <label style={moodSliderLabelStyle}>{props.name}</label>
     <Slider
           mode={1}
           step={0.001}
@@ -58,7 +59,13 @@ function SetMoodValue(props) {
             )}
           </Tracks>
         </Slider>
-  ]
+      </React.Fragment>
+  );
+}
+
+const moodQuestionnaireStyle = {
+  maxWidth: '400px',
+  margin: '0 auto',
 }
 
 function getMoodDefaultValues() {
@@ -102,14 +109,17 @@ export class MoodQuestionaire extends Component {
     const moodValues = this.state.mood_values.map((d, i) =>
       <SetMoodValue value={d.mood_value}
         name={d.mood_name} onChange={this.onValueChange}
-        key={"mood_" + d.mood_name}/>);
+        key={"mood_" + d.mood_name + '_' + i}/>);
 
     return (
-      <div>
+      <div style={moodQuestionnaireStyle}>
         { this.state.errorWithForm &&
           <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
         }
-        <label className="label">How are you feeling right now? Left: Not at all, Right: very much so.</label>
+        <label className="label">
+          How are you feeling <em>right now</em>? 
+          Left: Not at all (total disagreement), Right: very much so (total agreement).
+        </label>
         { moodValues }
         <button className="submit_btn" type="submit" value="Submit" onClick={this.onSubmit}>Proceed</button>
       </div>
@@ -167,8 +177,9 @@ export class DivergentQuestion extends React.Component {
 
   render() {
     return (
-      <div>
-        <p>Write down as many uses as you can think of for the following object: {this.state.keyword}</p>
+      <div className="divergent_question">
+        <p>Write down as many uses as you can think of for the following object:</p>
+        <p className="keyword">{this.state.keyword}</p>
         <p className="instruction">Press enter if you want to submit a response (do it after each word)</p>
         <input type="text" onKeyPress={this._handleKeyPress} value={this.state.value} onChange={this.handleChange}/>
       </div>
@@ -179,24 +190,19 @@ export class DivergentQuestion extends React.Component {
 
 export function RenderBreak(props) {
     return (
-      <div className="App">
-        <Music music_url={props.music_url} />
-        <p>Relax and take a break for {props.count_down} seconds until the next exercise</p>
-      </div>
+      <p>Relax and take a break for {props.count_down} seconds until the next exercise</p>
     );
 }
 
 export function RenderDone(props) {
     return (
-      <div className="App">
-        <p>All done! Thanks</p>
-      </div>
+      <p>All done! Thanks</p>
     );
 }
 
 export function Music(props) {
   return (
-    <audio autoPlay="autoplay" loop="True">
+    <audio autoPlay="autoplay" loop="True" id="audio">
       <source src={process.env.PUBLIC_URL + props.music_url} />
     </audio>
   )

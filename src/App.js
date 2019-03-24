@@ -22,7 +22,6 @@ class App extends Component {
       answers: [],
       question: null,
       current_question_id: 1,
-      music_id: 'entry',
       music_url: null,
       user_data_ok: false,
       selectedLanguage: "",
@@ -115,11 +114,12 @@ class App extends Component {
     // the first stage is not listed here
     const stages = [
       (stage_id)=> {
+        this.setMusic(null);
         this.setState({displayMoodQuestion: true});
       },
       (stage_id)=> {
         // first priming
-        this.setMusic(this.state.questions[this.state.task_ptr][0]['id'].substring(0, 2));
+        this.setMusic('relaxing')
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
       (stage_id)=>{
@@ -141,8 +141,9 @@ class App extends Component {
       },
       (stage_id)=>{
         // second priming
-        this.setMusic(2);
+        this.setMusic('energising');
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
+        console.log('here')
       }
     ];
 
@@ -158,10 +159,11 @@ class App extends Component {
   }
 
   setMusic(id){
+    let audio_tag = document.getElementById('audio')
     if (id in __MUSIC__) {
-      this.setState({music_url: "/songs/" + __MUSIC__[id]})
+      this.setState({music_url: "/songs/" + __MUSIC__[id]}, () => { audio_tag.load(); audio_tag.play() })
     } else {
-      this.setState({music_url: ""})
+      this.setState({music_url: ""}, () => audio_tag.pause())
     }
   }
 
@@ -281,8 +283,7 @@ class App extends Component {
     }
 
     return (
-      <div className="App">
-        <Music music_url={this.state.music_url} />
+      <div className="question">
         <div className="countDownTimer">
           { this.state.count_down >= 0 &&
             <p>{this.state.count_down} seconds to go</p>
@@ -294,32 +295,31 @@ class App extends Component {
   }
 
   renderUserInformationForm() {
-    return [
-          <label className="label">Please enter the given code from your sheet of paper.</label>,
-          <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>,
-          <label className="label">Select your preferred language.</label>,
-          <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
-            <option value="">select one</option>
-            <option value="en">English</option>
-            <option value="de">Deutsch</option>
-            <option value="fr">Francais</option>
-          </select>,
-          <label className="label">Enter your gender:</label>,
-          <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
-            <option value="">select one</option>
-            <option value="m">male</option>
-            <option value="f">female</option>
-            <option value="o">other</option>
-          </select>,
-          <label className="label">Age</label>,
-          <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
-    ];
+    return (
+        <label className="label">Please enter the given code from your sheet of paper.</label>,
+        <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>,
+        <label className="label">Select your preferred language.</label>,
+        <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
+          <option value="">select one</option>
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Francais</option>
+        </select>,
+        <label className="label">Enter your gender:</label>,
+        <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
+          <option value="">select one</option>
+          <option value="m">male</option>
+          <option value="f">female</option>
+          <option value="o">other</option>
+        </select>,
+        <label className="label">Age</label>,
+        <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
+    );
   }
 
   renderWelcomePage(){
     return (
-      <div className="App welcome">
-        <Music music_url={this.state.music_url} />
+      <div className="welcome">
         <h1>Welcome to our little study!</h1>
         <p>It will take about 30 min of your time to complete this study.</p>
         <p>Please make sure that your headphones are plugged in. You should hear a song right now.</p>
@@ -347,21 +347,32 @@ class App extends Component {
   }
 
   render() {
+    let body
+
     if (!this.state.done) {
       if (this.state.user_data_ok) {
         if (this.state.displayMoodQuestion) {
-          return <MoodQuestionaire onSubmit={this.handleMoodQuestionaire}/>;
+          body = <MoodQuestionaire onSubmit={this.handleMoodQuestionaire}/>;
         } else if (this.state.question === null) {
-          return <RenderBreak count_down={this.state.count_down} music_url={this.state.music_url}/>;
+          body =  <RenderBreak count_down={this.state.count_down} music_url={this.state.music_url}/>;
         } else {
-          return this.renderQuestion();
+          body = this.renderQuestion();
         }
       } else {
-        return this.renderWelcomePage();
+        body =  this.renderWelcomePage();
       }
     } else {
-      return <RenderDone />;
+      body = <RenderDone />;
     }
+
+    return (
+      <div className="App">
+        <Music music_url={this.state.music_url} />
+        {body}
+      </div>
+    )
+
+
   }
 }
 

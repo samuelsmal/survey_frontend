@@ -55,3 +55,11 @@
   text-align: center;
 
 }
+
+.divergent_question > .keyword {
+  font-weight: bold;
+}
+
+.divergent_question > .instruction {
+  font-style: italic;
+}
