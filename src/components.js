@@ -121,7 +121,7 @@ export class MoodQuestionaire extends Component {
           Left: Not at all (total disagreement), Right: very much so (total agreement).
         </label>
         { moodValues }
-        <button className="submit_btn" type="submit" value="Submit" onClick={this.onSubmit}>Proceed</button>
+      <button className="submit_btn" type="submit" value="Submit" onClick={this.onSubmit}>Proceed</button>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export class MoodQuestionaire extends Component {
 export function ConvergenceQuestion(props) {
   // TODO add translation?
   return (
-    <div className="convergence_question">
+    <form className="convergence_question" id="question-form">
       <p>Select the most fitting answer following the given statement:</p>
       <label className="questionStatement"> {props.question} </label>
       { props.possibleAnswers.map(answer => {
@@ -141,11 +141,12 @@ export function ConvergenceQuestion(props) {
               value={answer.id}
               name={props.question.id}
               key={"input_" + props.question.id + "_" + answer.id}
+              onClick={(e) => { props.onChange(answer); e.preventDefault()}}
               />
             <span className="answer">{answer.answer}</span>
           </div>
         )})}
-    </div>
+    </form>
   );
 }
 

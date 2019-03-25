@@ -26,6 +26,7 @@ class App extends Component {
       user_data_ok: false,
       selectedLanguage: "",
       stage_id: -1,
+      music_order: null,
       count_down_start: null,
       count_down: null,
       questions: null,
@@ -42,7 +43,9 @@ class App extends Component {
       },
       displayMoodQuestion: false,
       mood_values: [],
-      current_mood_values: null
+      current_mood_values: null,
+      displaySelfChosenPage: false
+      self_chosen_song: null
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
@@ -119,7 +122,32 @@ class App extends Component {
       },
       (stage_id)=> {
         // first priming
-        this.setMusic('relaxing')
+        this.setMusic(this.state.music_order[0])
+        this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
+      },
+      (stage_id)=>{
+        // first round of questions
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      },
+      (stage_id)=>{
+        // short break
+        this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
+      },
+      (stage_id)=>{
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      },
+      (stage_id)=> {
+        // second round
+        this.setMusic(null);
+        this.setState({displayMoodQuestion: true});
+      },
+      (stage_id)=>{
+        // silent break
+        this.setWaitTimer(__TIMING_DURATIONS__['silence']);
+      },
+      (stage_id)=>{
+        // second priming
+        this.setMusic(this.state.music_order[1]);
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
       (stage_id)=>{
@@ -134,17 +162,58 @@ class App extends Component {
         // second q-round
         this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
       },
+      (stage_id)=> {
+        // third round
+        this.setMusic(null);
+        this.setState({displayMoodQuestion: true});
+      },
       (stage_id)=>{
         // silent break
-        this.setMusic(null);
         this.setWaitTimer(__TIMING_DURATIONS__['silence']);
       },
       (stage_id)=>{
-        // second priming
-        this.setMusic('energising');
+        this.setMusic(this.state.music_order[2]);
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
-        console.log('here')
-      }
+      },
+      (stage_id)=>{
+        // first round of questions
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      },
+      (stage_id)=>{
+        // short break
+        this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
+      },
+      (stage_id)=>{
+        // second q-round
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      },
+      (stage_id)=> {
+        // third round
+        this.setMusic(null);
+        this.setState({displayMoodQuestion: true});
+      },
+      (stage_id)=>{
+        this.setState({displaySelfChosenPage: true})
+      },
+      (stage_id)=>{
+        this.setState({displaySelfChosenPage: false})
+        this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
+      },
+      (stage_id)=>{
+        // first round of questions
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      },
+      (stage_id)=>{
+        // short break
+        this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
+      },
+      (stage_id)=>{
+        // second q-round
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      },
+      (stage_id)=> {
+        this.setState({displayMoodQuestion: true});
+      },
     ];
 
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
@@ -246,7 +315,7 @@ class App extends Component {
     console.warn('turn this off!')
     // TODO turn this off!
     all_good = true
-    this.setState({user_id: "test", selectedLanguage: "fr"});
+    this.setState({user_id: "1010", selectedLanguage: "fr"});
 
     this.setState({error_with_user_data: !all_good}, () => {
       if (this.state.user_id !== null
@@ -255,8 +324,7 @@ class App extends Component {
         && all_good) {
         sendAdditionalData({...this.state.additional_user_data, user_id: this.state.user_id});
         getQuestions(this.state.user_id, this.state.selectedLanguage).then(response => {
-          console.log(response);
-          this.setState({user_data_ok: true, questions: response.data},
+          this.setState({user_data_ok: true, questions: response.data['questions'], music_order: response.data['music_order']},
             this.progressToNextStage);
         }).catch(error => console.log(error));
       }
@@ -294,27 +362,14 @@ class App extends Component {
     );
   }
 
-  renderUserInformationForm() {
+  renderSelfChosenMusicPage(){
     return (
-        <label className="label">Please enter the given code from your sheet of paper.</label>,
-        <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>,
-        <label className="label">Select your preferred language.</label>,
-        <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
-          <option value="">select one</option>
-          <option value="en">English</option>
-          <option value="de">Deutsch</option>
-          <option value="fr">Francais</option>
-        </select>,
-        <label className="label">Enter your gender:</label>,
-        <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
-          <option value="">select one</option>
-          <option value="m">male</option>
-          <option value="f">female</option>
-          <option value="o">other</option>
-        </select>,
-        <label className="label">Age</label>,
-        <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
-    );
+      <div>
+        <p>Please select a song which you think will help you solve these problems the best.</p>
+        <p>If ready press the button below</p>
+        <button className="submit_btn" type="submit" onClick={this.progressToNextStage}>Proceed</button>
+      </div>
+    )
   }
 
   renderWelcomePage(){
@@ -330,7 +385,24 @@ class App extends Component {
           { this.state.error_with_user_data &&
               <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
           }
-          { this.renderUserInformationForm() }
+        <label className="label">Please enter the given code from your sheet of paper.</label>
+        <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>
+        <label className="label">Select your preferred language.</label>
+        <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
+          <option value="">select one</option>
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Francais</option>
+        </select>
+        <label className="label">Enter your gender:</label>
+        <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
+          <option value="">select one</option>
+          <option value="m">male</option>
+          <option value="f">female</option>
+          <option value="o">other</option>
+        </select>
+        <label className="label">Age</label>
+        <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
           <label className="label">Field of study / Profession</label>
           <input type="text" name="field_of_study" value={this.state.additional_user_data.field_of_study} onChange={this.handleAdditionalUserData}/ >
           <label className="label">Country of origin</label>
@@ -351,7 +423,9 @@ class App extends Component {
 
     if (!this.state.done) {
       if (this.state.user_data_ok) {
-        if (this.state.displayMoodQuestion) {
+        if (this.state.displaySelfChosenPage) {
+          body = this.renderSelfChosenMusicPage();
+        } else if (this.state.displayMoodQuestion) {
           body = <MoodQuestionaire onSubmit={this.handleMoodQuestionaire}/>;
         } else if (this.state.question === null) {
           body =  <RenderBreak count_down={this.state.count_down} music_url={this.state.music_url}/>;

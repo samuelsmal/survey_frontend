@@ -8,7 +8,8 @@ export const __TIMING_DURATIONS__ = {
 };
 export const __MUSIC__ = {
   entry: "gtr-nylon22.wav",
-  relaxing: "Prelude-to-the-afternoon-of-a-faun.mp3",
-  energizing: "vivaldi-spring-i-allegro-from-the-4-seasons-op8-no-1.mp3"
+  relax: "Prelude-to-the-afternoon-of-a-faun.mp3",
+  energy: "vivaldi-spring-i-allegro-from-the-4-seasons-op8-no-1.mp3",
+  nothing: ""
 };
-export const __LANGUAGES__ = ['en', 'de', 'fr'];
+export const __LANGUAGES__ = ['en', 'it', 'fr'];
