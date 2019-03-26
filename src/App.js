@@ -36,11 +36,11 @@ class App extends Component {
       error_with_user_data: false,
       additional_user_data: {
         gender: undefined,
-        age: undefined,
-        field_of_study: undefined,
-        country_of_origin: undefined,
-        mother_tongue: undefined,
-        email: undefined
+        age: "",
+        field_of_study: "",
+        country_of_origin: "",
+        mother_tongue: "",
+        email: ""
       },
       displayMoodQuestion: false,
       mood_values: [],
@@ -352,8 +352,8 @@ class App extends Component {
 
     console.warn('turn this off!')
     // TODO turn this off!
-    all_good = true
-    this.setState({user_id: "1010", selectedLanguage: "fr"});
+    //all_good = true
+    //this.setState({user_id: "1010", selectedLanguage: "fr"});
 
     this.setState({error_with_user_data: !all_good}, () => {
       if (this.state.user_id !== null
@@ -441,35 +441,50 @@ class App extends Component {
           { this.state.error_with_user_data &&
               <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
           }
-        <label className="label">Please enter the given code from your sheet of paper.</label>
-        <input className="text" type="textarea" value={this.state.user_id} onChange={this.handleUserIdChange}/>
-        <label className="label">Select your preferred language.</label>
-        <select value={this.state.selectedLanguage} onChange={this.handleLanguageSelection}>
-          <option value="">select one</option>
-          <option value="en">English</option>
-          <option value="de">Deutsch</option>
-          <option value="fr">Francais</option>
-        </select>
-        <label className="label">Enter your gender:</label>
-        <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
-          <option value="">select one</option>
-          <option value="m">male</option>
-          <option value="f">female</option>
-          <option value="o">other</option>
-        </select>
-        <label className="label">Age</label>
-        <input type="text" name="age" value={this.state.additional_user_data.age} onChange={this.handleAdditionalUserData} />
+          <label className="label">Please enter the given code from your sheet of paper.</label>
+          <input className="text" type="textarea" value={this.state.user_id} name="user_id" onChange={this.handleUserIdChange}/>
+          <label className="label">Select your preferred language.</label>
+          <select value={this.state.selectedLanguage} name="language" onChange={this.handleLanguageSelection}>
+            <option value="">select one</option>
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Francais</option>
+          </select>
+          <label className="label">Enter your gender:</label>
+          <select value={this.state.additional_user_data.gender} name="gender" onChange={this.handleAdditionalUserData}>
+            <option value="">select one</option>
+            <option value="m">male</option>
+            <option value="f">female</option>
+            <option value="o">other</option>
+          </select>
+          <label className="label">Age</label>
+          <input type="text"
+            name="age"
+            value={this.state.additional_user_data.age}
+            onChange={this.handleAdditionalUserData} />
           <label className="label">Field of study / Profession</label>
-          <input type="text" name="field_of_study" value={this.state.additional_user_data.field_of_study} onChange={this.handleAdditionalUserData}/ >
+          <input type="text"
+            name="field_of_study"
+            value={this.state.additional_user_data.field_of_study}
+            onChange={this.handleAdditionalUserData}/ >
           <label className="label">Country of origin</label>
-          <input type="text" name="country_of_origin" value={this.state.additional_user_data.country_of_origin} onChange={this.handleAdditionalUserData}/ >
+          <input type="text"
+            name="country_of_origin"
+            value={this.state.additional_user_data.country_of_origin}
+            onChange={this.handleAdditionalUserData}/ >
           <label className="label">Mother tongue</label>
-          <input type="text" name="monther_tongue" value={this.state.additional_user_data.monther_tongue} onChange={this.handleAdditionalUserData}/ >
+          <input type="text"
+            name="mother_tongue"
+            value={this.state.additional_user_data.mother_tongue}
+            onChange={this.handleAdditionalUserData}/ >
           <label className="label">If you would like some feedback, please also enter your email</label>
-          <input type="text" name="email" value={this.state.additional_user_data.email} onChange={this.handleAdditionalUserData}/ >
+          <input type="text"
+            name="email"
+            value={this.state.additional_user_data.email}
+            onChange={this.handleAdditionalUserData}/ >
           <input className="submit_btn" type="submit" value="Submit"
               onClick={this.handleSubmitUserData} />
-        </form>
+          </form>
       </div>
     );
   }

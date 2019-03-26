@@ -204,7 +204,7 @@ export function RenderDone(props) {
 export function Music(props) {
   return (
     <audio autoPlay="autoplay" loop="True" id="audio">
-      <source src={process.env.PUBLIC_URL + props.music_url} />
+      <source src={process.env.PUBLIC_URL + props.music_url} type="audio/mp3" />
     </audio>
   )
 }
