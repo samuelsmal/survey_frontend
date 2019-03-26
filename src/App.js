@@ -446,7 +446,7 @@ class App extends Component {
           <label className="label">Select your preferred language.</label>
           <select value={this.state.selectedLanguage} name="language" onChange={this.handleLanguageSelection}>
             <option value="">select one</option>
-            <option value="en">English</option>
+            <option value="en">Italiano</option>
             <option value="de">Deutsch</option>
             <option value="fr">Francais</option>
           </select>

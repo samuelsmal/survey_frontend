@@ -12,4 +12,4 @@ export const __MUSIC__ = {
   energy: "vivaldi-spring-i-allegro-from-the-4-seasons-op8-no-1.mp3",
   nothing: ""
 };
-export const __LANGUAGES__ = ['en', 'it', 'fr'];
+export const __LANGUAGES__ = ['it', 'fr'];
