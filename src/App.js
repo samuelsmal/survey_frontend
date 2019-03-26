@@ -30,7 +30,8 @@ class App extends Component {
       count_down_start: null,
       count_down: null,
       questions: null,
-      task_ptr: 0,
+      task_ptr: -1,
+      prev_task_ptr: -1,
       question_ptr: 0,
       error_with_user_data: false,
       additional_user_data: {
@@ -44,8 +45,13 @@ class App extends Component {
       displayMoodQuestion: false,
       mood_values: [],
       current_mood_values: null,
-      displaySelfChosenPage: false
-      self_chosen_song: null
+      displaySelfChosenPage: false,
+      self_chosen_music: {
+        artist: "",
+        title: "",
+        genre: ""
+      },
+      error_with_self_chosen_music_data: false
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
@@ -63,59 +69,16 @@ class App extends Component {
     this.clearTimers = this.clearTimers.bind(this);
     this.getNextQuestion = this.getNextQuestion.bind(this);
     this.progressPtrs = this.progressPtrs.bind(this);
+    this.handleSelfChosenMusicChange = this.handleSelfChosenMusicChange.bind(this);
+    this.handleSelfChosenMusicSubmit = this.handleSelfChosenMusicSubmit.bind(this);
+    this.progressTaskPtr = this.progressTaskPtr.bind(this);
 
     this.timeout = null;
     this.count_down = null;
-  }
 
-  progressPtrs() {
-    if (this.state.questions[this.state.task_ptr].length > this.state.question_ptr + 1) {
-      this.setState({question_ptr: this.state.question_ptr + 1}, () => {
-        this.setState({question: this.getNextQuestion()});
-      });
-    } else if (this.state.questions.length > this.state.task_ptr + 1) {
-      this.setState({question_ptr: 0, task_ptr: this.state.task_ptr + 1, question: null},
-        this.progressToNextStage);
-    } else {
-        this.setState({question_ptr: -1, task_ptr: -1, question: null, done: true},
-          this.progressToNextStage);
-    }
-  }
-
-  getNextQuestion() {
-    // getNextQuestion works only with nice values
-    if (this.state.questions.length > this.state.task_ptr && this.state.questions[this.state.task_ptr].length > this.state.question_ptr) {
-      console.debug("found a question in task_ptr: " + this.state.task_ptr + " and q_ptr " + this.state.question_ptr + ", here look:");
-      console.debug(this.state.questions[this.state.task_ptr][this.state.question_ptr]);
-      return this.state.questions[this.state.task_ptr][this.state.question_ptr];
-    } else {
-      return null;
-    }
-  }
-
-  progressToNextStage(){
-    /* 0: basic user data input
-     * 1: first priming phase with first music
-     * 2: first questionnaire with first music
-     * 3: break
-     * 4: second questionnaire with first music
-     * 5: longer break
-     * 6: second priming phase with second music
-     * 7: first questionnaire with second music
-     * 8: break
-     * 9: second questionnaire with second music
-     * 10: longer break
-     * 11: third priming phase with self-chosen music
-     */
-    var current_stage = this.state.stage_id;
-    var next_stage = current_stage + 1;
-
-    this.clearTimers();
-
-    console.log("progressing to next stage " + next_stage + " prev stage " + current_stage);
 
     // the first stage is not listed here
-    const stages = [
+    this.stages = [
       (stage_id)=> {
         this.setMusic(null);
         this.setState({displayMoodQuestion: true});
@@ -126,15 +89,14 @@ class App extends Component {
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
       (stage_id)=>{
-        // first round of questions
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=>{
         // short break
         this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
       },
       (stage_id)=>{
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=> {
         // second round
@@ -152,15 +114,14 @@ class App extends Component {
       },
       (stage_id)=>{
         // first round of questions
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=>{
         // short break
         this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
       },
       (stage_id)=>{
-        // second q-round
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=> {
         // third round
@@ -176,8 +137,7 @@ class App extends Component {
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
       (stage_id)=>{
-        // first round of questions
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=>{
         // short break
@@ -185,7 +145,7 @@ class App extends Component {
       },
       (stage_id)=>{
         // second q-round
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=> {
         // third round
@@ -200,25 +160,81 @@ class App extends Component {
         this.setWaitTimer(__TIMING_DURATIONS__['music_priming']);
       },
       (stage_id)=>{
-        // first round of questions
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=>{
         // short break
         this.setWaitTimer(__TIMING_DURATIONS__['break_between_questions']);
       },
       (stage_id)=>{
-        // second q-round
-        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+        this.progressTaskPtr();
       },
       (stage_id)=> {
         this.setState({displayMoodQuestion: true});
       },
     ];
+  }
+
+  progressTaskPtr() {
+    // set the progression of the task ptr into stone... not the best idea
+    // but it fits the general spaghetti code here
+    this.setState({task_ptr: this.state.prev_task_ptr + 1, question_ptr: 0, prev_task_ptr: this.state.prev_task_ptr + 1},
+      ()=>{
+        this.setState({question: this.getNextQuestion()}, this.setWaitTimer(__TIMING_DURATIONS__['questions']));
+      }
+    )
+  }
+
+  progressPtrs() {
+    if (this.state.questions[this.state.task_ptr].length > this.state.question_ptr + 1) {
+      this.setState({question_ptr: this.state.question_ptr + 1}, () => {
+        this.setState({question: this.getNextQuestion()});
+      });
+    } else if (this.state.questions.length > this.state.task_ptr + 1) {
+      this.setState({question_ptr: 0, task_ptr: this.state.task_ptr + 1, question: null},
+        this.progressToNextStage);
+    } else {
+        // reached the end of the study
+        this.setState({question_ptr: -1, task_ptr: -1, question: null, done: true},
+          this.progressToNextStage);
+    }
+  }
+
+  getNextQuestion() {
+    // getNextQuestion works only with nice values
+    if (this.state.questions.length > this.state.task_ptr && this.state.questions[this.state.task_ptr].length > this.state.question_ptr) {
+      console.debug("found a question in task_ptr: " + this.state.task_ptr + " and q_ptr " + this.state.question_ptr + ", here look:");
+      console.debug(this.state.questions[this.state.task_ptr][this.state.question_ptr]);
+      return this.state.questions[this.state.task_ptr][this.state.question_ptr];
+    } else {
+      return null;
+    }
+  }
+
+  progressToNextStage(){
+    var current_stage = this.state.stage_id;
+    /* 0: basic user data input
+     * 1: first priming phase with first music
+     * 2: first questionnaire with first music
+     * 3: break
+     * 4: second questionnaire with first music
+     * 5: longer break
+     * 6: second priming phase with second music
+     * 7: first questionnaire with second music
+     * 8: break
+     * 9: second questionnaire with second music
+     * 10: longer break
+     * 11: third priming phase with self-chosen music
+     */
+    var next_stage = current_stage + 1;
+
+    this.clearTimers();
+
+    console.log("progressing to next stage " + next_stage + " prev stage " + current_stage);
 
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
-      if (next_stage < stages.length) {
-        stages[next_stage](this.state.stage_id);
+      if (next_stage < this.stages.length) {
+        this.stages[next_stage](this.state.stage_id);
       } else {
         // done with everything
         console.log("done")
@@ -269,6 +285,27 @@ class App extends Component {
     this.clearTimers();
   }
 
+  handleSelfChosenMusicSubmit(e) {
+    let t = Object.keys(this.state.self_chosen_music)
+    let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && (value_ok(this.state.self_chosen_music[el]) && this.state.self_chosen_music[el].length > 0), true)
+
+    if (all_good) {
+      sendAdditionalData({user_id: this.state.user_id, data: this.state.self_chosen_music});
+      this.setState({displaySelfChosenPage: false, error_with_self_chosen_music_data: false}, this.progressToNextStage)
+    } else {
+      this.setState({error_with_self_chosen_music_data: true})
+    }
+
+
+    e.preventDefault();
+  }
+
+  handleSelfChosenMusicChange(e) {
+    let t = e.target;
+    this.setState({self_chosen_music: {...this.state.self_chosen_music,
+      [t.name]: t.value}});
+  }
+
   handleUserIdChange(event) {
     this.setState({user_id: event.target.value});
   }
@@ -290,6 +327,7 @@ class App extends Component {
     },
       () => {
         this.progressPtrs();
+        // otherwise the radio button stays activated
         document.getElementById("question-form").reset();
         sendAnswers(this.state.user_id, this.state.answers);
       }
@@ -324,6 +362,8 @@ class App extends Component {
         && all_good) {
         sendAdditionalData({...this.state.additional_user_data, user_id: this.state.user_id});
         getQuestions(this.state.user_id, this.state.selectedLanguage).then(response => {
+          console.log('got quetsions')
+          console.log(response.data['questions'])
           this.setState({user_data_ok: true, questions: response.data['questions'], music_order: response.data['music_order']},
             this.progressToNextStage);
         }).catch(error => console.log(error));
@@ -366,8 +406,24 @@ class App extends Component {
     return (
       <div>
         <p>Please select a song which you think will help you solve these problems the best.</p>
-        <p>If ready press the button below</p>
-        <button className="submit_btn" type="submit" onClick={this.progressToNextStage}>Proceed</button>
+        <p>If you have selected the song and entered the information below, please click the button.</p>
+        <p>Please enter the title and the artist below:</p>
+        { this.state.error_with_self_chosen_music_data &&
+          <p className="error_field">Some error with the form. Please fill it out completely.</p>
+        }
+        <div>
+          <label>Artist</label>
+          <input type="text" name='artist' value={this.state.self_chosen_music['artist']} onChange={this.handleSelfChosenMusicChange}/>
+        </div>
+        <div>
+          <label>Title</label>
+          <input type="text" name='title' value={this.state.self_chosen_music['title']} onChange={this.handleSelfChosenMusicChange}/>
+        </div>
+        <div>
+          <label>Genre</label>
+          <input type="text" name='genre' value={this.state.self_chosen_music['genre']} onChange={this.handleSelfChosenMusicChange}/>
+        </div>
+        <button className="submit_btn" type="submit" onClick={this.handleSelfChosenMusicSubmit}>Proceed</button>
       </div>
     )
   }
