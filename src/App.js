@@ -357,8 +357,8 @@ class App extends Component {
 
     console.warn('turn this off!')
     // TODO turn this off!
-    all_good = true
-    this.setState({user_id: "1010", selectedLanguage: "fr"});
+    //all_good = true
+    //this.setState({user_id: "1010", selectedLanguage: "fr"});
 
     this.setState({error_with_user_data: !all_good}, () => {
       if (this.state.user_id !== null
