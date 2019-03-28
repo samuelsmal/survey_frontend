@@ -243,8 +243,10 @@ class App extends Component {
   }
 
   allowMusic() {
-    let audio_tag = document.getElementById('audio')
-    audio_tag.play()
+    if (this.state.music_url) {
+      let audio_tag = document.getElementById('audio')
+      audio_tag.play()
+    }
   }
 
   setMusic(id){
