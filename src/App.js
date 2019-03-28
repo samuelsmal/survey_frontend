@@ -354,6 +354,7 @@ class App extends Component {
   }
 
   handleSubmitUserData(event) {
+    this.allowMusic()
     let t = Object.keys(this.state.additional_user_data)
     // the last value, which is email can be empty
     let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
@@ -444,7 +445,6 @@ class App extends Component {
         <p>Please make sure that your headphones are plugged in. You should hear a song right now.</p>
         <p>The study will start as soon as you press submit. So make sure that you are ready.</p>
         <p>In order for us to play the music please click the button below:</p>
-        <button className="submit_btn" type="submit" onClick={this.allowMusic}>Allow music</button>
         <p>TODO DESCRIBE OUTLINE OF PROCEDURE</p>
         <p>Good luck!</p>
         <form className="form">
