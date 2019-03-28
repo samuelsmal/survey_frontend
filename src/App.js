@@ -70,6 +70,7 @@ class App extends Component {
     this.handleSelfChosenMusicChange = this.handleSelfChosenMusicChange.bind(this);
     this.handleSelfChosenMusicSubmit = this.handleSelfChosenMusicSubmit.bind(this);
     this.progressTaskPtr = this.progressTaskPtr.bind(this);
+    this.allowMusic = this.allowMusic.bind(this);
 
     this.timeout = null;
     this.count_down = null;
@@ -239,6 +240,11 @@ class App extends Component {
         this.setState({done: true});
       }
     });
+  }
+
+  allowMusic() {
+    let audio_tag = document.getElementById('audio')
+    audio_tag.play()
   }
 
   setMusic(id){
@@ -434,6 +440,8 @@ class App extends Component {
         <p>It will take about 30 min of your time to complete this study.</p>
         <p>Please make sure that your headphones are plugged in. You should hear a song right now.</p>
         <p>The study will start as soon as you press submit. So make sure that you are ready.</p>
+        <p>In order for us to play the music please click the button below:</p>
+        <button className="submit_btn" type="submit" onClick={this.allowMusic}>Allow music</button>
         <p>TODO DESCRIBE OUTLINE OF PROCEDURE</p>
         <p>Good luck!</p>
         <form className="form">
@@ -446,7 +454,6 @@ class App extends Component {
           <select value={this.state.selectedLanguage} name="language" onChange={this.handleLanguageSelection}>
             <option value="">select one</option>
             <option value="en">Italiano</option>
-            <option value="de">Deutsch</option>
             <option value="fr">Francais</option>
           </select>
           <label className="label">Enter your gender:</label>
@@ -496,7 +503,9 @@ class App extends Component {
         if (this.state.displaySelfChosenPage) {
           body = this.renderSelfChosenMusicPage();
         } else if (this.state.displayMoodQuestion) {
-          body = <MoodQuestionaire onSubmit={this.handleMoodQuestionaire}/>;
+          body = <MoodQuestionaire
+            onSubmit={this.handleMoodQuestionaire}
+            getMusicGoing={this.allowMusic}/>;
         } else if (this.state.question === null) {
           body =  <RenderBreak count_down={this.state.count_down} music_url={this.state.music_url}/>;
         } else {
