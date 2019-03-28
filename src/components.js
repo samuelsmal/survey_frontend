@@ -120,7 +120,7 @@ export class MoodQuestionaire extends Component {
           <p className="error_field">Some error with the form. Please fill it out completely (except for the email address).</p>
         }
         <label className="label">
-          How are you feeling <em>right now</em>? 
+          How are you feeling <em>right now</em>?
           Left: Not at all (total disagreement), Right: very much so (total agreement).
         </label>
         { moodValues }
@@ -138,7 +138,7 @@ export function ConvergenceQuestion(props) {
       <label className="questionStatement"> {props.question} </label>
       { props.possibleAnswers.map(answer => {
         return (
-          <div key={props.question.id + "_" + answer.id} onClick={() => props.onChange(answer)} >
+          <div key={props.question.id + "_" + answer.id} >
             <input
               type="radio"
               value={answer.id}
@@ -146,7 +146,7 @@ export function ConvergenceQuestion(props) {
               key={"input_" + props.question.id + "_" + answer.id}
               onClick={(e) => { props.onChange(answer); e.preventDefault()}}
               />
-            <span className="answer">{answer.answer}</span>
+            <span className="answer" onClick={() => props.onChange(answer)}>{answer.answer}</span>
           </div>
         )})}
     </form>
