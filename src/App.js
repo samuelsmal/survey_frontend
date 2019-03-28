@@ -7,7 +7,8 @@ import {sendAnswers, getQuestions, sendAdditionalData} from './api';
 
 
 function value_ok(val){
-  return typeof(val) !== 'undefined'
+  return val !== ''
+  //return typeof(val) !== 'undefined'
 }
 
 
@@ -388,7 +389,7 @@ class App extends Component {
 
   renderQuestion() {
     let q;
-    if (this.state.question && this.state.question.id.startsWith('ct')) {
+    if (this.state.question && this.state.question.id.includes('ct')) {
       q = <ConvergenceQuestion question={this.state.question.question}
         possibleAnswers={this.state.question.possible_answers}
         onChange={this.handleConvergentAnswerSubmission}
