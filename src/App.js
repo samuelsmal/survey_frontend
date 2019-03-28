@@ -5,9 +5,6 @@ import {MoodQuestionaire, RenderBreak, ConvergenceQuestion, Music, RenderDone, D
 import {__TIMING_DURATIONS__, __MUSIC__, __LANGUAGES__} from './constants';
 import {sendAnswers, getQuestions, sendAdditionalData} from './api';
 
-// TODO some styling
-// TODO handle headphone switch
-// TODO send beginning of survey to server
 
 function value_ok(val){
   return typeof(val) !== 'undefined'
@@ -51,7 +48,8 @@ class App extends Component {
         title: "",
         genre: ""
       },
-      error_with_self_chosen_music_data: false
+      error_with_self_chosen_music_data: false,
+      api_token: null
     };
 
     this.handleUserIdChange = this.handleUserIdChange.bind(this);
@@ -269,6 +267,7 @@ class App extends Component {
 
   componentDidMount() {
     this.setMusic('entry');
+    this.setState({api_token: + new Date()});
   }
 
   clearTimers() {
@@ -290,7 +289,7 @@ class App extends Component {
     let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && (value_ok(this.state.self_chosen_music[el]) && this.state.self_chosen_music[el].length > 0), true)
 
     if (all_good) {
-      sendAdditionalData({user_id: this.state.user_id, data: this.state.self_chosen_music});
+      sendAdditionalData(this.state.api_token, {user_id: this.state.user_id, data: this.state.self_chosen_music});
       this.setState({displaySelfChosenPage: false, error_with_self_chosen_music_data: false}, this.progressToNextStage)
     } else {
       this.setState({error_with_self_chosen_music_data: true})
@@ -312,32 +311,32 @@ class App extends Component {
 
   handleMoodQuestionaire(values) {
     this.setState({
-      mood_values: this.state.mood_values.concat([{timestamp: new Date().toLocaleString(), values: values}]),
+      mood_values: this.state.mood_values.concat([{timestamp: + new Date(), values: values}]),
       displayMoodQuestion: false
     }, ()=>{
-      sendAdditionalData({user_id: this.state.user_id, data: this.state.mood_values});
+      sendAdditionalData(this.state.api_token, {user_id: this.state.user_id, data: this.state.mood_values});
       this.progressToNextStage();
     })
   }
 
   handleConvergentAnswerSubmission(answer) {
     this.setState({
-      answers: this.state.answers.concat([[this.state.question.id, answer.id, new Date().toLocaleString()]]),
+      answers: this.state.answers.concat([[this.state.question.id, answer.id, + new Date()]]),
       value: ''
     },
       () => {
         this.progressPtrs();
         // otherwise the radio button stays activated
         document.getElementById("question-form").reset();
-        sendAnswers(this.state.user_id, this.state.answers);
+        sendAnswers(this.state.api_token, this.state.user_id, [answer]);
       }
     );
   }
 
   handleDivergentAnswerSubmission(answer) {
     this.setState({
-      answers: this.state.answers.concat([[this.state.question.id, answer, new Date().toLocaleString()]]),
-    }, () => {sendAnswers(this.state.user_id, this.state.answers)});
+      answers: this.state.answers.concat([[this.state.question.id, answer, + new Date()]]),
+    }, () => {sendAnswers(this.api_token, this.state.user_id, this.state.answers)});
   }
 
   handleAdditionalUserData(event) {
@@ -352,16 +351,16 @@ class App extends Component {
 
     console.warn('turn this off!')
     // TODO turn this off!
-    //all_good = true
-    //this.setState({user_id: "1010", selectedLanguage: "fr"});
+    all_good = true
+    this.setState({user_id: "1010", selectedLanguage: "fr"});
 
     this.setState({error_with_user_data: !all_good}, () => {
       if (this.state.user_id !== null
         && this.state.user_id !== ''
         && __LANGUAGES__.includes(this.state.selectedLanguage)
         && all_good) {
-        sendAdditionalData({...this.state.additional_user_data, user_id: this.state.user_id});
-        getQuestions(this.state.user_id, this.state.selectedLanguage).then(response => {
+        sendAdditionalData(this.state.api_token, {...this.state.additional_user_data, user_id: this.state.user_id});
+        getQuestions(this.state.api_token, this.state.user_id, this.state.selectedLanguage).then(response => {
           console.log('got quetsions')
           console.log(response.data['questions'])
           this.setState({user_data_ok: true, questions: response.data['questions'], music_order: response.data['music_order']},
