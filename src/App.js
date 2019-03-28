@@ -353,9 +353,10 @@ class App extends Component {
 
   handleSubmitUserData(event) {
     let t = Object.keys(this.state.additional_user_data)
+    // the last value, which is email can be empty
     let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
 
-    console.warn('turn this off!')
+    //console.warn('turn this off!')
     // TODO turn this off!
     //all_good = true
     //this.setState({user_id: "1010", selectedLanguage: "fr"});
@@ -453,7 +454,7 @@ class App extends Component {
           <label className="label">Select your preferred language.</label>
           <select value={this.state.selectedLanguage} name="language" onChange={this.handleLanguageSelection}>
             <option value="">select one</option>
-            <option value="en">Italiano</option>
+            <option value="it">Italiano</option>
             <option value="fr">Francais</option>
           </select>
           <label className="label">Enter your gender:</label>
