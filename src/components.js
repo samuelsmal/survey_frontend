@@ -69,13 +69,15 @@ const moodQuestionnaireStyle = {
 }
 
 function getMoodDefaultValues() {
-  return [
-    {"mood_name": "relaxed", "mood_value": 50},
-    {"mood_name": "tired", "mood_value": 50},
-    {"mood_name": "happy", "mood_value": 50},
-    {"mood_name": "energetic", "mood_value": 50},
-    {"mood_name": "sad", "mood_value": 50}
-  ];
+  // it's easier to loop over...
+  // I know that this works for certain
+  return {
+    relaxed: 50,
+    tired: 50,
+    happy: 50,
+    energetic: 50,
+    sad: 50
+  }
 }
 
 export class MoodQuestionaire extends Component {
@@ -88,28 +90,29 @@ export class MoodQuestionaire extends Component {
     };
 
     this._onSubmit = props.onSubmit;
+    this._getMusicGoing = props.getMusicGoing;
     this.onSubmit = this.onSubmit.bind(this);
     this.onValueChange = this.onValueChange.bind(this);
   };
 
   onSubmit(event) {
+    this._getMusicGoing();
     this._onSubmit(this.state.mood_values);
 
     event.preventDefault();
   }
 
-  onValueChange(event) {
-    let t = event.target;
-
-    console.log("target");
-    console.log(t);
+  onValueChange(mood_name, val) {
+    this.setState({mood_values: {...this.state.mood_values, [mood_name]: val[0]}})
   }
 
   render() {
-    const moodValues = this.state.mood_values.map((d, i) =>
-      <SetMoodValue value={d.mood_value}
-        name={d.mood_name} onChange={this.onValueChange}
-        key={"mood_" + d.mood_name + '_' + i}/>);
+    const moodValues = Object.entries(this.state.mood_values).map((el, i) =>
+      {
+        return <SetMoodValue value={el[1]}
+          name={el[0]} onChange={(val) => {this.onValueChange(el[0], val)}}
+          key={"mood_" + el[0]}/>
+      })
 
     return (
       <div style={moodQuestionnaireStyle}>
