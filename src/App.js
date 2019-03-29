@@ -7,8 +7,7 @@ import {sendAnswers, getQuestions, sendAdditionalData} from './api';
 
 
 function value_ok(val){
-  return val !== ''
-  //return typeof(val) !== 'undefined'
+  return (val !== '') || (typeof(val) !== 'undefined')
 }
 
 
@@ -38,7 +37,8 @@ class App extends Component {
         field_of_study: "",
         country_of_origin: "",
         mother_tongue: "",
-        email: ""
+        played_music_before: false,
+        email: "" // this has to be last for the crappy validation
       },
       displayMoodQuestion: false,
       mood_values: [],
@@ -203,8 +203,6 @@ class App extends Component {
   getNextQuestion() {
     // getNextQuestion works only with nice values
     if (this.state.questions.length > this.state.task_ptr && this.state.questions[this.state.task_ptr].length > this.state.question_ptr) {
-      console.debug("found a question in task_ptr: " + this.state.task_ptr + " and q_ptr " + this.state.question_ptr + ", here look:");
-      console.debug(this.state.questions[this.state.task_ptr][this.state.question_ptr]);
       return this.state.questions[this.state.task_ptr][this.state.question_ptr];
     } else {
       return null;
@@ -229,15 +227,14 @@ class App extends Component {
     var next_stage = current_stage + 1;
 
     this.clearTimers();
-
-    console.log("progressing to next stage " + next_stage + " prev stage " + current_stage);
+    //console.log("progressing to next stage " + next_stage + " prev stage " + current_stage);
 
     this.setState({stage_id: next_stage, question: null, count_down: -1}, () => {
       if (next_stage < this.stages.length) {
         this.stages[next_stage](this.state.stage_id);
       } else {
         // done with everything
-        console.log("done")
+        //console.log("done")
         this.setState({done: true});
       }
     });
@@ -295,7 +292,7 @@ class App extends Component {
 
   handleSelfChosenMusicSubmit(e) {
     let t = Object.keys(this.state.self_chosen_music)
-    let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && (value_ok(this.state.self_chosen_music[el]) && this.state.self_chosen_music[el].length > 0), true)
+    let all_good = t.reduce((acc, el) => acc && (value_ok(this.state.self_chosen_music[el]) && this.state.self_chosen_music[el].length > 0), true)
 
     if (all_good) {
       sendAdditionalData(this.state.api_token, {user_id: this.state.user_id, data: this.state.self_chosen_music});
@@ -329,29 +326,33 @@ class App extends Component {
   }
 
   handleConvergentAnswerSubmission(answer) {
+    const payload = [this.state.question.id, answer.id, + new Date()]
     this.setState({
-      answers: this.state.answers.concat([[this.state.question.id, answer.id, + new Date()]]),
+      answers: this.state.answers.concat([payload]),
       value: ''
     },
       () => {
         this.progressPtrs();
         // otherwise the radio button stays activated
         document.getElementById("question-form").reset();
-        sendAnswers(this.state.api_token, this.state.user_id, [answer]);
+        sendAnswers(this.state.api_token, this.state.user_id, payload);
       }
     );
   }
 
   handleDivergentAnswerSubmission(answer) {
+    const payload = [this.state.question.id, answer, + new Date()]
     this.setState({
-      answers: this.state.answers.concat([[this.state.question.id, answer, + new Date()]]),
-    }, () => {sendAnswers(this.api_token, this.state.user_id, this.state.answers)});
+      answers: this.state.answers.concat([payload]),
+    }, () => {sendAnswers(this.state.api_token, this.state.user_id, payload)});
   }
 
   handleAdditionalUserData(event) {
-    let t = event.target;
+    const t = event.target;
+    const v = t.type === 'checkbox' ? t.checked : t.value;
+
     this.setState({additional_user_data: {...this.state.additional_user_data,
-      [t.name]: t.value}});
+      [t.name]: v}});
   }
 
   handleSubmitUserData(event) {
@@ -359,6 +360,11 @@ class App extends Component {
     let t = Object.keys(this.state.additional_user_data)
     // the last value, which is email can be empty
     let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
+
+    console.log("here ins submit")
+    console.log(all_good)
+    console.log(this.state.additional_user_data['played_music_before'])
+
 
     //console.warn('turn this off!')
     // TODO turn this off!
@@ -371,12 +377,15 @@ class App extends Component {
         && __LANGUAGES__.includes(this.state.selectedLanguage)
         && all_good) {
         sendAdditionalData(this.state.api_token, {...this.state.additional_user_data, user_id: this.state.user_id});
-        getQuestions(this.state.api_token, this.state.user_id, this.state.selectedLanguage).then(response => {
-          this.setState({user_data_ok: true, questions: response.data['questions'], music_order: response.data['music_order']},
-            this.progressToNextStage);
+        getQuestions(this.state.api_token,
+                     this.state.user_id,
+                     this.state.selectedLanguage).then(response => {
+          this.setState({user_data_ok: true,
+                         questions: response.data['questions'],
+                         music_order: response.data['music_order']},
+                        this.progressToNextStage);
         }).catch(error => {
           this.setState({error_with_user_data: true})
-          console.log(error)
         });
       }
     })
@@ -444,7 +453,10 @@ class App extends Component {
       <div className="welcome">
         <h1>Welcome to our little study!</h1>
         <p>It will take about 30 min of your time to complete this study.</p>
-        <p>Please make sure that your headphones are plugged in. You should hear a song right now.</p>
+        <p>Please make sure that your headphones are plugged in. You should
+          hear a song right now. If not press <input type="submit" value="here"
+            onClick={this.allowMusic} /> , if you still can't hear any music
+            please try it on a different browser / machine. </p>
         <p>The study will start as soon as you press submit. So make sure that you are ready.</p>
         <p>In order for us to play the music please click the button below:</p>
         <p>TODO DESCRIBE OUTLINE OF PROCEDURE</p>
@@ -469,9 +481,11 @@ class App extends Component {
             <option value="o">other</option>
           </select>
           <label className="label">Age</label>
-          <input type="text"
+          <input type="number"
             name="age"
+            min="0"
             value={this.state.additional_user_data.age}
+            style={{margin: '0 auto'}}
             onChange={this.handleAdditionalUserData} />
           <label className="label">Field of study / Profession</label>
           <input type="text"
@@ -487,6 +501,11 @@ class App extends Component {
           <input type="text"
             name="mother_tongue"
             value={this.state.additional_user_data.mother_tongue}
+            onChange={this.handleAdditionalUserData}/ >
+          <label className="label">Do you play an instrument?</label>
+          <input type="checkbox"
+            name="played_music_before"
+            value={this.state.additional_user_data.played_music_before}
             onChange={this.handleAdditionalUserData}/ >
           <label className="label">If you would like some feedback, please also enter your email</label>
           <input type="text"

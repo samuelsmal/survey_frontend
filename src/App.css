@@ -1,6 +1,8 @@
 .App {
   text-align: center;
   padding: 0 100px;
+  max-width: 50em;
+  margin: 0 auto;
 }
 
 .App-header {
@@ -19,10 +21,6 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-.label {
-
 }
 
 .textarea {
