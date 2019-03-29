@@ -372,11 +372,12 @@ class App extends Component {
         && all_good) {
         sendAdditionalData(this.state.api_token, {...this.state.additional_user_data, user_id: this.state.user_id});
         getQuestions(this.state.api_token, this.state.user_id, this.state.selectedLanguage).then(response => {
-          console.log('got quetsions')
-          console.log(response.data['questions'])
           this.setState({user_data_ok: true, questions: response.data['questions'], music_order: response.data['music_order']},
             this.progressToNextStage);
-        }).catch(error => console.log(error));
+        }).catch(error => {
+          this.setState({error_with_user_data: true})
+          console.log(error)
+        });
       }
     })
 
