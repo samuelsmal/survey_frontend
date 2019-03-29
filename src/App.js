@@ -458,8 +458,23 @@ class App extends Component {
             onClick={this.allowMusic} /> , if you still can't hear any music
             please try it on a different browser / machine. </p>
         <p>The study will start as soon as you press submit. So make sure that you are ready.</p>
-        <p>In order for us to play the music please click the button below:</p>
-        <p>TODO DESCRIBE OUTLINE OF PROCEDURE</p>
+        <p>You will have to perform two different types of task while listening to music.
+          The first task is of multiple choice type; click on the words or on the round
+          bullet point to select your answer. Be careful you have only one
+          chance to click! Once you have clicked on a solution, the program
+          will take you to the next question.
+          </p>
+          <p>For the second task, you are asked to type in your answers, do so
+            in the field that is dedicated for this purpose and press enter to
+            submit your answer.</p>
+          <p>In between the tasks, you have breaks to relax
+            and a small questionnaire to fill in.
+          </p>
+          <p>At the end, you have the choose your own song. Play it on a platform outside of
+      our study (for ex. Spotify or Youtube), come back to the window
+      displaying our study and give us the required information about the
+          music (just the title, artist and genre). Play it in repeat until the end of the experiment.
+          </p>
         <p>Good luck!</p>
         <form className="form">
           { this.state.error_with_user_data &&
