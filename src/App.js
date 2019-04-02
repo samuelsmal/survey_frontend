@@ -243,14 +243,25 @@ class App extends Component {
   allowMusic() {
     if (this.state.music_url) {
       let audio_tag = document.getElementById('audio')
-      audio_tag.play()
+      audio_tag.play().catch(error => {
+        console.log('well... shit ... give this to sam: browser, platform and this: music should be allowed now')
+      }).then(() => {
+        // nothging
+      })
     }
   }
 
   setMusic(id){
     let audio_tag = document.getElementById('audio')
     if (id in __MUSIC__) {
-      this.setState({music_url: "/songs/" + __MUSIC__[id]}, () => { audio_tag.load(); audio_tag.play() })
+      this.setState({music_url: "/songs/" + __MUSIC__[id]}, () => { 
+        audio_tag.load();
+        audio_tag.play().catch(error => {
+          console.log('well... shit ... give this to sam: browser, platform and this: ' + id)
+        }).then(() => {
+          // nothging
+        })
+      })
     } else {
       this.setState({music_url: ""}, () => audio_tag.pause())
     }
