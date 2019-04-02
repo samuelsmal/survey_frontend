@@ -182,7 +182,7 @@ export class DivergentQuestion extends React.Component {
   render() {
     return (
       <div className="divergent_question">
-        <p>Write down as many uses as you can think of for the following object:</p>
+        <p>Write down as many <u>uses</u> as you can think of for the following object:</p>
         <p className="keyword">{this.state.keyword}</p>
         <p className="instruction">Press enter if you want to submit a response (do it after each word)</p>
         <input type="text" onKeyPress={this._handleKeyPress} value={this.state.value} onChange={this.handleChange}/>
