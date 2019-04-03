@@ -438,6 +438,7 @@ class App extends Component {
       <div>
         <p>Please select a song which you think will help you solve these problems the best.</p>
         <p>If you have selected the song and entered the information below, please click the button.</p>
+        <p>Make sure that the song is playing before you continue.</p>
         <p>Please enter the title and the artist below:</p>
         { this.state.error_with_self_chosen_music_data &&
           <p className="error_field">Some error with the form. Please fill it out completely.</p>
@@ -484,7 +485,7 @@ class App extends Component {
           <p>At the end, you have the choose your own song. Play it on a platform outside of
       our study (for ex. Spotify or Youtube), come back to the window
       displaying our study and give us the required information about the
-          music (just the title, artist and genre). Play it in repeat until the end of the experiment.
+          music (just the title, artist and genre). Play it on repeat until the end of the experiment, but select and play the music when we tell you.
           </p>
         <p>Good luck!</p>
         <form className="form">
