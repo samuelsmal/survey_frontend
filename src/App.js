@@ -429,7 +429,8 @@ class App extends Component {
       q = (
         <div>
           <p>Esistono due tipi di attività.</p>
-          <p>Nel primo, scegli tra le possibilità date la coppia di parole che segue o riempie la stessa logica della coppia nei dati. Per il secondo, cita un massimo di modi per usare il prossimo oggetto. Ad esempio per un "bicchiere": bere, pentola, disegnare un cerchio ...</p>
+          <p>Nella prima parte, scegli tra le coppie proposte quella più adatta per riempire i buchi o che segue la stessa logica che quella data. Nella seconda parte, scrivi quanti più utilizzi possibili riesci a trovare per il seguente oggetto:
+            (Per esempio: Bicchiere -> Bere, Vaso, Disegnare un cerchio ...)</p>
           <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}); this.progressToNextStage();}}>Proceed</button>
         </div>
       )
