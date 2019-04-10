@@ -7,7 +7,7 @@ import {sendAnswers, getQuestions, sendAdditionalData} from './api';
 
 
 function value_ok(val){
-  return (val !== '') || (typeof(val) !== 'undefined')
+  return (val !== '') // || (typeof(val) !== 'undefined')
 }
 
 
@@ -50,6 +50,7 @@ class App extends Component {
         genre: ""
       },
       error_with_self_chosen_music_data: false,
+      displayExplanation: false,
       api_token: null
     };
 
@@ -59,6 +60,7 @@ class App extends Component {
     this.handleSubmitUserData = this.handleSubmitUserData.bind(this);
     this.handleAdditionalUserData = this.handleAdditionalUserData.bind(this);
     this.handleMoodQuestionaire = this.handleMoodQuestionaire.bind(this);
+    this.renderQuestionExplanation = this.renderQuestionExplanation.bind(this);
     this.renderQuestion = this.renderQuestion.bind(this);
     this.renderWelcomePage = this.renderWelcomePage.bind(this);
     this.setWaitTimer = this.setWaitTimer.bind(this);
@@ -79,6 +81,10 @@ class App extends Component {
 
     // the first stage is not listed here
     this.stages = [
+      (stage_id)=> {
+        this.setMusic(null);
+        this.setState({displayExplanation: true})
+      },
       (stage_id)=> {
         this.setMusic(null);
         this.setState({displayMoodQuestion: true});
@@ -408,6 +414,30 @@ class App extends Component {
     this.setState({selectedLanguage: event.target.value});
   }
 
+  renderQuestionExplanation() {
+    let q;
+
+    if (this.state.selectedLanguage === 'fr') {
+      q = (
+        <div>
+          <p>Il y a deux types de tâches.</p>
+          <p>Dans la première choisissez, parmi les possibilités données, le couple de mots qui suit ou remplit la même logique que la paire dans la donnée. Pour la deuxième, citez un maximum de façons d'utiliser l'objet suivant. Par exemple pour un "Verre" : boire, pot, dessiner un cercle ...</p>
+          <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}); this.progressToNextStage();}}>Proceed</button>
+        </div>
+      )
+    } else {
+      q = (
+        <div>
+          <p>Esistono due tipi di attività.</p>
+          <p>Nel primo, scegli tra le possibilità date la coppia di parole che segue o riempie la stessa logica della coppia nei dati. Per il secondo, cita un massimo di modi per usare il prossimo oggetto. Ad esempio per un "bicchiere": bere, pentola, disegnare un cerchio ...</p>
+          <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}); this.progressToNextStage();}}>Proceed</button>
+        </div>
+      )
+    }
+
+    return q;
+  }
+
   renderQuestion() {
     let q;
     if (this.state.question && this.state.question.id.includes('ct')) {
@@ -551,7 +581,10 @@ class App extends Component {
 
     if (!this.state.done) {
       if (this.state.user_data_ok) {
-        if (this.state.displaySelfChosenPage) {
+        if (this.state.displayExplanation) {
+          body = this.renderQuestionExplanation();
+        }
+        else if (this.state.displaySelfChosenPage) {
           body = this.renderSelfChosenMusicPage();
         } else if (this.state.displayMoodQuestion) {
           body = <MoodQuestionaire
