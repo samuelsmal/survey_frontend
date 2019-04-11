@@ -428,9 +428,9 @@ class App extends Component {
     } else {
       q = (
         <div>
-          <p>Esistono due tipi di attività.</p>
-          <p>Nella prima parte, scegli tra le coppie proposte quella più adatta per riempire i buchi o che segue la stessa logica che quella data. Nella seconda parte, scrivi quanti più utilizzi possibili riesci a trovare per il seguente oggetto:
-            (Per esempio: Bicchiere -> Bere, Vaso, Disegnare un cerchio ...)</p>
+          <p>Ci sono due tipi di esercizi.</p>
+          <p>Il primo consiste in delle analogie verbali, in cui bisogna trovare la coppia di parole che segue la stessa logica di quella data.</p>
+          <p>Nel secondo esercizio, dovete trovare il maggior numero di utilizzi possibili per un dato oggetto. Per esempio per la parola “bicchiere” delle possibili risposte sarebbero: bere, vaso, disegnare un cerchio ...</p>
           <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}); this.progressToNextStage();}}>Proceed</button>
         </div>
       )
