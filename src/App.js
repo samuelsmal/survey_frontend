@@ -375,13 +375,12 @@ class App extends Component {
   handleSubmitUserData(event) {
     this.allowMusic()
     let t = Object.keys(this.state.additional_user_data)
-    // the last value, which is email can be empty
-    let all_good = t.slice(0, t.length - 1).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
+    // the last value, which is email can be empty, and the "has played music before" as well
+    console.log(t.slice(0, t.length - 2))
+    let all_good = t.slice(0, t.length - 2).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
 
     console.log("here ins submit")
     console.log(all_good)
-    console.log(this.state.additional_user_data['played_music_before'])
-
 
     //console.warn('turn this off!')
     // TODO turn this off!
@@ -422,7 +421,7 @@ class App extends Component {
         <div>
           <p>Il y a deux types de tâches.</p>
           <p>Dans la première choisissez, parmi les possibilités données, le couple de mots qui suit ou remplit la même logique que la paire dans la donnée. Pour la deuxième, citez un maximum de façons d'utiliser l'objet suivant. Par exemple pour un "Verre" : boire, pot, dessiner un cercle ...</p>
-          <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}); this.progressToNextStage();}}>Proceed</button>
+          <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}, this.progressToNextStage)}}>Proceed</button>
         </div>
       )
     } else {
@@ -431,7 +430,7 @@ class App extends Component {
           <p>Ci sono due tipi di esercizi.</p>
           <p>Il primo consiste in delle analogie verbali, in cui bisogna trovare la coppia di parole che segue la stessa logica di quella data.</p>
           <p>Nel secondo esercizio, dovete trovare il maggior numero di utilizzi possibili per un dato oggetto. Per esempio per la parola “bicchiere” delle possibili risposte sarebbero: bere, vaso, disegnare un cerchio ...</p>
-          <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}); this.progressToNextStage();}}>Proceed</button>
+          <button className="submit_btn" type="submit" onClick={()=> {this.setState({displayExplanation: false}, this.progressToNextStage)}}>Proceed</button>
         </div>
       )
     }
@@ -584,8 +583,7 @@ class App extends Component {
       if (this.state.user_data_ok) {
         if (this.state.displayExplanation) {
           body = this.renderQuestionExplanation();
-        }
-        else if (this.state.displaySelfChosenPage) {
+        } else if (this.state.displaySelfChosenPage) {
           body = this.renderSelfChosenMusicPage();
         } else if (this.state.displayMoodQuestion) {
           body = <MoodQuestionaire
