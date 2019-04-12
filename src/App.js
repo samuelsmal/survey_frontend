@@ -376,8 +376,7 @@ class App extends Component {
     this.allowMusic()
     let t = Object.keys(this.state.additional_user_data)
     // the last value, which is email can be empty, and the "has played music before" as well
-    console.log(t.slice(0, t.length - 2))
-    let all_good = t.slice(0, t.length - 2).reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
+    let all_good = t.filter(attr => attr !== 'email').reduce((acc, el) => acc && value_ok(this.state.additional_user_data[el]), true)
 
     console.log("here ins submit")
     console.log(all_good)
